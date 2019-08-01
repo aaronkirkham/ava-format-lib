@@ -101,7 +101,7 @@ void ReadBufferFromArchive(const std::filesystem::path& filename, uint32_t name_
         }
 
         case CompressionType::CompressionType_Oodle: {
-            //
+            throw std::runtime_error("Oodle Decompression not implemented!");
             break;
         }
     }
