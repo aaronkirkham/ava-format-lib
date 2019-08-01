@@ -20,3 +20,10 @@ project "AvaFormatLib"
   kind "StaticLib"
   files { "src/**.cpp", "include/**.h" }
   disablewarnings { "4200", "4267", "4334" }
+
+project "Examples"
+  kind "ConsoleApp"
+  files { "examples/**/*.cpp", "examples/**/*.h" }
+  dependson { "AvaFormatLib" }
+  links { "out/%{cfg.buildcfg}/AvaFormatLib" }
+  includedirs { "include" }
