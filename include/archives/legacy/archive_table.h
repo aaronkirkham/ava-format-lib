@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <filesystem>
+#include <vector>
 
 namespace ava::legacy::ArchiveTable
 {
@@ -25,5 +25,5 @@ struct TabFileEntry {
 static_assert(sizeof(TabFileHeader) == 0xC, "TabFileHeader (legacy) alignment is wrong!");
 static_assert(sizeof(TabFileEntry) == 0xC, "TabFileEntry (legacy) alignment is wrong!");
 
-void ReadTab(const std::filesystem::path& filename, std::vector<TabFileEntry>* out_entries);
+void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabFileEntry>* out_entries);
 }; // namespace ava::legacy::ArchiveTable

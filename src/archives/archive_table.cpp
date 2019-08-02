@@ -1,22 +1,24 @@
-#include "../include/archive_table.h"
+#include "../../include/archives/archive_table.h"
 
+#include "../../include/util/byte_array_buffer.h"
+#include "../../include/util/hashlittle.h"
+
+#include <algorithm>
 #include <assert.h>
-#include <fstream>
 
 namespace ava::ArchiveTable
 {
-void ReadTab(std::filesystem::path& filename, std::vector<TabFileEntry>* out_entries,
+void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabFileEntry>* out_entries,
              std::vector<TabFileCompressedBlock>* out_compressed_blocks)
 {
+    assert(buffer.size() != 0);
     assert(out_entries != nullptr);
 
-    std::ifstream stream(filename, std::ios::binary);
-    if (stream.fail()) {
-        throw std::runtime_error("Failed to open input TAB stream!");
-    }
+    byte_array_buffer buf(buffer.data(), buffer.size());
+    std::istream      stream(&buf);
 
     // read header
-    TabFileHeader header;
+    TabFileHeader header{};
     stream.read((char*)&header, sizeof(TabFileHeader));
     if (header.m_Magic != TAB_MAGIC) {
         throw std::runtime_error("Invalid TAB header magic! (Input file isn't .TAB?)");
@@ -34,20 +36,17 @@ void ReadTab(std::filesystem::path& filename, std::vector<TabFileEntry>* out_ent
     }
 
     // read entries
-    const auto length = std::filesystem::file_size(filename);
-    while (static_cast<int32_t>(stream.tellg()) + 20 <= length) {
+    while (static_cast<int32_t>(stream.tellg()) + 20 <= buffer.size()) {
         TabFileEntry entry;
         stream.read((char*)&entry, sizeof(TabFileEntry));
         out_entries->emplace_back(std::move(entry));
     }
-
-    stream.close();
 }
 
-bool ReadTabEntry(const std::filesystem::path& filename, uint32_t name_hash, TabFileEntry* out_entry)
+bool ReadTabEntry(const std::vector<uint8_t>& buffer, uint32_t name_hash, TabFileEntry* out_entry)
 {
     std::vector<TabFileEntry> entries;
-    ReadTab(filename, &entries, nullptr);
+    ReadTab(buffer, &entries);
 
     const auto it = std::find_if(entries.begin(), entries.end(),
                                  [name_hash](const TabFileEntry& entry) { return entry.m_NameHash == name_hash; });
@@ -59,7 +58,8 @@ bool ReadTabEntry(const std::filesystem::path& filename, uint32_t name_hash, Tab
     return false;
 }
 
-void ReadBufferFromArchive(const std::filesystem::path& filename, uint32_t name_hash, std::vector<uint8_t>* out_buffer)
+#if 0
+void ReadBufferFromArchive(const std::vector<uint8_t>& buffer, uint32_t name_hash, std::vector<uint8_t>* out_buffer)
 {
     auto tab_filename = filename;
     tab_filename.replace_extension(".tab");
@@ -106,4 +106,5 @@ void ReadBufferFromArchive(const std::filesystem::path& filename, uint32_t name_
         }
     }
 }
+#endif
 }; // namespace ava::ArchiveTable

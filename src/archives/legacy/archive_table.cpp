@@ -1,15 +1,17 @@
-#include "../../include/legacy/archive_table.h"
+#include "../../../include/archives/legacy/archive_table.h"
 
-#include <fstream>
+#include "../../../include/util/byte_array_buffer.h"
+#include "../../../include/util/hashlittle.h"
 
 namespace ava::legacy::ArchiveTable
 {
-void ReadTab(std::filesystem::path& filename, std::vector<TabFileEntry>* out_entries)
+void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabFileEntry>* out_entries)
 {
-    std::ifstream stream(filename, std::ios::binary);
-    if (stream.fail()) {
-        throw std::runtime_error("Failed to open input file stream!");
-    }
+    assert(buffer.size() != 0);
+    assert(out_entries != nullptr);
+
+    byte_array_buffer buf(buffer.data(), buffer.size());
+    std::istream      stream(&buf);
 
     // read header
     TabFileHeader header;
@@ -29,7 +31,5 @@ void ReadTab(std::filesystem::path& filename, std::vector<TabFileEntry>* out_ent
 
         out_entries->emplace_back(std::move(entry));
     }
-
-    stream.close();
 }
 }; // namespace ava::legacy::ArchiveTable

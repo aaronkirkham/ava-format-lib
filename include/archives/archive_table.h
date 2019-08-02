@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <filesystem>
+#include <vector>
 
 namespace ava::ArchiveTable
 {
@@ -44,9 +44,9 @@ static_assert(sizeof(TabFileHeader) == 0x18, "TabFileHeader alignment is wrong!"
 static_assert(sizeof(TabFileEntry) == 0x14, "TabFileEntry alignment is wrong!");
 static_assert(sizeof(TabFileCompressedBlock) == 0x8, "TabFileCompressedBlock alignment is wrong!");
 
-void ReadTab(const std::filesystem::path& filename, std::vector<TabFileEntry>* out_entries,
+void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabFileEntry>* out_entries,
              std::vector<TabFileCompressedBlock>* out_compressed_blocks = nullptr);
-bool ReadTabEntry(const std::filesystem::path& filename, uint32_t name_hash, TabFileEntry* out_entry);
+bool ReadTabEntry(const std::vector<uint8_t>& buffer, uint32_t name_hash, TabFileEntry* out_entry);
 
-void ReadBufferFromArchive(const std::filesystem::path& filename, uint32_t name_hash, std::vector<uint8_t>* out_buffer);
+// void ReadBufferFromArchive(const std::vector<uint8_t>& buffer, uint32_t name_hash, std::vector<uint8_t>* out_buffer);
 }; // namespace ava::ArchiveTable
