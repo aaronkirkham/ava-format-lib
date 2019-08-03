@@ -50,5 +50,14 @@ int main(int argc, char* argv[])
 
         __debugbreak();
     }
+
+    // DDSC test
+    {
+        //
+
+        ava::AvalancheTexture::AvtxFileHeader header;
+        // ava::AvalancheTexture::GetHighestRank()
+    }
+
     return 1;
 }

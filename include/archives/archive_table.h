@@ -7,6 +7,12 @@ namespace ava::ArchiveTable
 {
 static constexpr uint32_t TAB_MAGIC = 0x424154; // "TAB"
 
+enum class CompressionType : uint8_t {
+    CompressionType_None  = 0,
+    CompressionType_Zlib  = 1,
+    CompressionType_Oodle = 4,
+};
+
 #pragma pack(push, 1)
 struct TabFileHeader {
     uint32_t m_Magic                  = TAB_MAGIC;
@@ -16,12 +22,6 @@ struct TabFileHeader {
     uint32_t _unknown                 = 0;
     uint32_t m_MaxCompressedBlockSize = 0;
     uint32_t m_UncompressedBlockSize  = 0;
-};
-
-enum class CompressionType : uint8_t {
-    CompressionType_None  = 0,
-    CompressionType_Zlib  = 1,
-    CompressionType_Oodle = 4,
 };
 
 struct TabFileEntry {
