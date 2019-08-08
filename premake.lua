@@ -21,9 +21,9 @@ project "AvaFormatLib"
   files { "src/**.cpp", "include/**.h" }
   disablewarnings { "4200", "4267", "4334" }
 
-project "Examples"
+project "UnitTests"
   kind "ConsoleApp"
-  files { "examples/**/*.cpp", "examples/**/*.h" }
+  files "tests/**"
   dependson { "AvaFormatLib" }
   links { "out/%{cfg.buildcfg}/AvaFormatLib" }
   includedirs { "include" }

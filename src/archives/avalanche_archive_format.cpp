@@ -13,8 +13,13 @@ namespace ava::AvalancheArchiveFormat
  */
 void Parse(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
 {
-    assert(buffer.size() != 0);
-    assert(out_buffer != nullptr);
+    if (buffer.empty()) {
+        throw std::invalid_argument("AAF input buffer can't be empty!");
+    }
+
+    if (!out_buffer) {
+        throw std::invalid_argument("AAF output buffer can't be nullptr!");
+    }
 
     byte_array_buffer buf(buffer.data(), buffer.size());
     std::istream      stream(&buf);

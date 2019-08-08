@@ -11,8 +11,13 @@ namespace ava::ArchiveTable
 void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabFileEntry>* out_entries,
              std::vector<TabFileCompressedBlock>* out_compressed_blocks)
 {
-    assert(buffer.size() != 0);
-    assert(out_entries != nullptr);
+    if (buffer.empty()) {
+        throw std::invalid_argument("TAB input buffer can't be empty!");
+    }
+
+    if (!out_entries) {
+        throw std::invalid_argument("TAB output entries vector can't be nullptr!");
+    }
 
     byte_array_buffer buf(buffer.data(), buffer.size());
     std::istream      stream(&buf);

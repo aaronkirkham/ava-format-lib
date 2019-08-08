@@ -16,8 +16,13 @@ namespace ava::StreamArchive
  */
 void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* out_entries)
 {
-    assert(buffer.size() != 0);
-    assert(out_entries != nullptr);
+    if (buffer.empty()) {
+        throw std::invalid_argument("SARC input buffer can't be empty!");
+    }
+
+    if (!out_entries) {
+        throw std::invalid_argument("SARC output entries vector can't be nullptr!");
+    }
 
     byte_array_buffer buf(buffer.data(), buffer.size());
     std::istream      stream(&buf);
@@ -111,8 +116,13 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* out_
  */
 void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* out_entries)
 {
-    assert(buffer.size() != 0);
-    assert(out_entries != nullptr);
+    if (buffer.empty()) {
+        throw std::invalid_argument("SARC TOC input buffer can't be empty!");
+    }
+
+    if (!out_entries) {
+        throw std::invalid_argument("SARC TOC output entries vector can't be nullptr!");
+    }
 
     byte_array_buffer buf(buffer.data(), buffer.size());
     std::istream      stream(&buf);
