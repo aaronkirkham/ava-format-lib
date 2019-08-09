@@ -65,3 +65,51 @@ TEST_CASE("Archive SARC TOC Test", "[AvaFormatLib]")
     REQUIRE_NOTHROW(ava::StreamArchive::ParseTOC(buffer, &entries));
     REQUIRE_FALSE(entries.empty());
 }
+
+struct AISpring {
+    float Speed;
+    float Constant;
+    float Damping;
+};
+
+struct SniperTweaks {
+    AISpring AimSpringXZ;
+    AISpring AimSpringY;
+    AISpring VelocityPredictionXZ;
+    float    PerfectAimTimeBeforeShooting;
+    float    InitialPredictAheadDistance;
+    float    FinalPredictAheadDistance;
+    float    PredictFadeOutTime;
+    float    ShootIfHoveringForThisLong;
+    float    MinTimeBeforeShooting;
+    float    InitialRandomAimDistance;
+};
+
+struct MountedWeaponTweaks {
+    int TimeBetweenCheckingTheSameWeaponTwice;
+};
+
+struct WeaponTweaks {
+    SniperTweaks        Sniper;
+    MountedWeaponTweaks MountedWeapon;
+};
+
+TEST_CASE("ADF Test", "[AvaFormatLib]")
+{
+    FileBuffer buffer;
+    ReadFile("C:/users/aaron/desktop/adf/weapons.aisystunec", &buffer);
+    REQUIRE_FALSE(buffer.empty());
+
+    ava::AvalancheDataFormat::AvalancheDataFormat adf(buffer);
+
+    // root instance
+    ava::AvalancheDataFormat::SInstanceInfo instance_info;
+    REQUIRE_NOTHROW(adf.GetInstance(0, &instance_info));
+    REQUIRE(instance_info.m_NameHash == 0xd9066df1);
+
+    // read instance
+    WeaponTweaks* weapon_tweaks = nullptr;
+    REQUIRE_NOTHROW(adf.ReadInstance(instance_info, (void**)&weapon_tweaks));
+    REQUIRE(weapon_tweaks != nullptr);
+    REQUIRE(weapon_tweaks->Sniper.InitialRandomAimDistance == 1.5f);
+}
