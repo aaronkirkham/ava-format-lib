@@ -3,7 +3,6 @@
 
 #include <AvaFormatLib.h>
 
-#include <assert.h>
 #include <filesystem>
 #include <fstream>
 
@@ -18,98 +17,155 @@ void ReadFile(const std::filesystem::path& filename, FileBuffer* buffer)
     stream.close();
 }
 
-TEST_CASE("Archive TAB Test", "[AvaFormatLib]")
-{
-    FileBuffer                                   buffer;
-    std::vector<ava::ArchiveTable::TabFileEntry> entries;
-
-    ReadFile("D:/Steam/steamapps/common/Just Cause 4/archives_win64/main_patch/game0.tab", &buffer);
-    REQUIRE_FALSE(buffer.empty());
-
-    // empty input buffer should throw
-    REQUIRE_THROWS_AS(ava::ArchiveTable::ReadTab({}, nullptr), std::invalid_argument);
-
-    // should have entries
-    REQUIRE_NOTHROW(ava::ArchiveTable::ReadTab(buffer, &entries));
-    REQUIRE_FALSE(entries.empty());
-}
-
-TEST_CASE("Archive AAF Test", "[AvaFormatLib]")
+TEST_CASE("Archive Table Format", "[AvaFormatLib][TAB]")
 {
     FileBuffer buffer;
-    FileBuffer out_buffer;
-
-    ReadFile("C:/users/aaron/desktop/grapplinghookwire.ee", &buffer);
+    ReadFile("../tests/data/game5.tab", &buffer);
     REQUIRE_FALSE(buffer.empty());
 
-    // empty input buffer should throw
-    REQUIRE_THROWS_AS(ava::AvalancheArchiveFormat::Parse({}, nullptr), std::invalid_argument);
+    SECTION("invalid input argument throws std::invalid_argument")
+    {
+        std::vector<ava::ArchiveTable::TabFileEntry> entries;
+        REQUIRE_THROWS_AS(ava::ArchiveTable::ReadTab({}, &entries), std::invalid_argument);
+        REQUIRE_THROWS_AS(ava::ArchiveTable::ReadTab(buffer, nullptr), std::invalid_argument);
+    }
 
-    // should have output buffer
-    REQUIRE_NOTHROW(ava::AvalancheArchiveFormat::Parse(buffer, &out_buffer));
-    REQUIRE_FALSE(out_buffer.empty());
+    SECTION("file was parsed and entries vector has results")
+    {
+        std::vector<ava::ArchiveTable::TabFileEntry> entries;
+        REQUIRE_NOTHROW(ava::ArchiveTable::ReadTab(buffer, &entries));
+        REQUIRE_FALSE(entries.empty());
+        REQUIRE(entries[0].m_NameHash == 0xbeea6bb0);
+    }
 }
 
-TEST_CASE("Archive SARC TOC Test", "[AvaFormatLib]")
-{
-    FileBuffer                                      buffer;
-    std::vector<ava::StreamArchive::ArchiveEntry_t> entries;
-
-    ReadFile("C:/users/aaron/desktop/grapplinghookwire.ee.toc", &buffer);
-    REQUIRE_FALSE(buffer.empty());
-
-    // empty input buffer should throw
-    REQUIRE_THROWS_AS(ava::StreamArchive::ParseTOC(buffer, nullptr), std::invalid_argument);
-
-    // should have entries
-    REQUIRE_NOTHROW(ava::StreamArchive::ParseTOC(buffer, &entries));
-    REQUIRE_FALSE(entries.empty());
-}
-
-struct AISpring {
-    float Speed;
-    float Constant;
-    float Damping;
-};
-
-struct SniperTweaks {
-    AISpring AimSpringXZ;
-    AISpring AimSpringY;
-    AISpring VelocityPredictionXZ;
-    float    PerfectAimTimeBeforeShooting;
-    float    InitialPredictAheadDistance;
-    float    FinalPredictAheadDistance;
-    float    PredictFadeOutTime;
-    float    ShootIfHoveringForThisLong;
-    float    MinTimeBeforeShooting;
-    float    InitialRandomAimDistance;
-};
-
-struct MountedWeaponTweaks {
-    int TimeBetweenCheckingTheSameWeaponTwice;
-};
-
-struct WeaponTweaks {
-    SniperTweaks        Sniper;
-    MountedWeaponTweaks MountedWeapon;
-};
-
-TEST_CASE("ADF Test", "[AvaFormatLib]")
+TEST_CASE("Avalanche Archive Format", "[AvaFormatLib][AAF]")
 {
     FileBuffer buffer;
-    ReadFile("C:/users/aaron/desktop/adf/weapons.aisystunec", &buffer);
+    ReadFile("../tests/data/grapplinghookwire.ee", &buffer);
     REQUIRE_FALSE(buffer.empty());
 
-    ava::AvalancheDataFormat::AvalancheDataFormat adf(buffer);
+    SECTION("invalid input argument throws std::invalid_argument")
+    {
+        FileBuffer out_buffer;
+        REQUIRE_THROWS_AS(ava::AvalancheArchiveFormat::Parse({}, &out_buffer), std::invalid_argument);
+        REQUIRE_THROWS_AS(ava::AvalancheArchiveFormat::Parse(buffer, nullptr), std::invalid_argument);
+    }
 
-    // root instance
-    ava::AvalancheDataFormat::SInstanceInfo instance_info;
-    REQUIRE_NOTHROW(adf.GetInstance(0, &instance_info));
-    REQUIRE(instance_info.m_NameHash == 0xd9066df1);
+    /*SECTION("has valid output buffer")
+    {
+        FileBuffer out_buffer;
+        REQUIRE_NOTHROW(ava::AvalancheArchiveFormat::Parse(buffer, &out_buffer));
+        REQUIRE_FALSE(out_buffer.empty());
+    }*/
+}
 
-    // read instance
-    WeaponTweaks* weapon_tweaks = nullptr;
-    REQUIRE_NOTHROW(adf.ReadInstance(instance_info, (void**)&weapon_tweaks));
-    REQUIRE(weapon_tweaks != nullptr);
-    REQUIRE(weapon_tweaks->Sniper.InitialRandomAimDistance == 1.5f);
+TEST_CASE("Stream Archive", "[AvaFormatLib][SARC]")
+{
+    FileBuffer buffer;
+    ReadFile("../tests/data/paratrooper_drop.ee", &buffer);
+    REQUIRE_FALSE(buffer.empty());
+
+    SECTION("invalid input argument throws std::invalid_argument")
+    {
+        std::vector<ava::StreamArchive::ArchiveEntry_t> entries;
+        REQUIRE_THROWS_AS(ava::StreamArchive::Parse({}, &entries), std::invalid_argument);
+        REQUIRE_THROWS_AS(ava::StreamArchive::Parse(buffer, nullptr), std::invalid_argument);
+    }
+
+    SECTION("file was parsed and entries vector has results")
+    {
+        std::vector<ava::StreamArchive::ArchiveEntry_t> entries;
+        REQUIRE_NOTHROW(ava::StreamArchive::Parse(buffer, &entries));
+        REQUIRE(entries.size() == 3);
+        REQUIRE(entries[2].m_Filename
+                == "editor/entities/spawners/combatant_spawnrules/spawn_modules/paratrooper_drop.epe");
+    }
+}
+
+TEST_CASE("Stream Archive TOC", "[AvaFormatLib][TOC]")
+{
+    FileBuffer buffer;
+    ReadFile("../tests/data/grapplinghookwire.ee.toc", &buffer);
+    REQUIRE_FALSE(buffer.empty());
+
+    SECTION("invalid input argument throws std::invalid_argument")
+    {
+        std::vector<ava::StreamArchive::ArchiveEntry_t> entries;
+        REQUIRE_THROWS_AS(ava::StreamArchive::ParseTOC({}, &entries), std::invalid_argument);
+        REQUIRE_THROWS_AS(ava::StreamArchive::ParseTOC(buffer, nullptr), std::invalid_argument);
+    }
+
+    SECTION("file was parsed and entries vector has results")
+    {
+        std::vector<ava::StreamArchive::ArchiveEntry_t> entries;
+        REQUIRE_NOTHROW(ava::StreamArchive::ParseTOC(buffer, &entries));
+        REQUIRE_FALSE(entries.empty());
+        REQUIRE(entries[9].m_Filename == "effects/textures/t_smoke_blast_alpha_dif.ddsc");
+    }
+}
+
+TEST_CASE("Avalanche Data Format", "[AvaFormatLib][ADF]")
+{
+    FileBuffer buffer;
+    ReadFile("../tests/data/weapons.aisystunec", &buffer);
+    REQUIRE_FALSE(buffer.empty());
+
+    struct AISpring {
+        float Speed;
+        float Constant;
+        float Damping;
+    };
+
+    struct SniperTweaks {
+        AISpring AimSpringXZ;
+        AISpring AimSpringY;
+        AISpring VelocityPredictionXZ;
+        float    PerfectAimTimeBeforeShooting;
+        float    InitialPredictAheadDistance;
+        float    FinalPredictAheadDistance;
+        float    PredictFadeOutTime;
+        float    ShootIfHoveringForThisLong;
+        float    MinTimeBeforeShooting;
+        float    InitialRandomAimDistance;
+    };
+
+    struct MountedWeaponTweaks {
+        int TimeBetweenCheckingTheSameWeaponTwice;
+    };
+
+    struct WeaponTweaks {
+        SniperTweaks        Sniper;
+        MountedWeaponTweaks MountedWeapon;
+    };
+
+    SECTION("invalid input argument throws std::invalid_argument")
+    {
+        REQUIRE_THROWS_AS(
+            []() {
+                // invalid input buffer
+                ava::AvalancheDataFormat::AvalancheDataFormat adf({});
+            }(),
+            std::invalid_argument);
+    }
+
+    SECTION("can get root instance")
+    {
+        ava::AvalancheDataFormat::AvalancheDataFormat adf(buffer);
+
+        ava::AvalancheDataFormat::SInstanceInfo instance_info{};
+        REQUIRE_NOTHROW(adf.GetInstance(0, &instance_info));
+        REQUIRE(instance_info.m_NameHash == 0xd9066df1);
+    }
+
+    SECTION("can read root instance")
+    {
+        ava::AvalancheDataFormat::AvalancheDataFormat adf(buffer);
+
+        // read instance
+        WeaponTweaks* weapon_tweaks = nullptr;
+        REQUIRE_NOTHROW(adf.ReadInstance(0xd9066df1, 0x8dfb5000, (void**)&weapon_tweaks));
+        REQUIRE(weapon_tweaks != nullptr);
+        REQUIRE(weapon_tweaks->Sniper.InitialRandomAimDistance == 1.5f);
+    }
 }

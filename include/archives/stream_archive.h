@@ -5,7 +5,7 @@
 
 namespace ava::StreamArchive
 {
-static constexpr uint32_t SARC_MAGIC = 0x53415243; // "SARC"
+static constexpr uint32_t SARC_MAGIC = 0x43524153; // "SARC"
 
 #pragma pack(push, 1)
 struct SarcFileHeader {
