@@ -9,6 +9,10 @@ namespace ava::RuntimePropertyContainer
 {
 void Parse(const std::vector<uint8_t>& buffer)
 {
+    if (buffer.empty()) {
+        throw std::invalid_argument("RTPC input buffer can't be empty!");
+    }
+
     byte_array_buffer buf(buffer.data(), buffer.size());
     std::istream      stream(&buf);
 

@@ -13,6 +13,14 @@ namespace ava::AvalancheTexture
  */
 void Parse(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
 {
+    if (buffer.empty()) {
+        throw std::invalid_argument("AVTX input buffer can't be empty!");
+    }
+
+    if (!out_buffer) {
+        throw std::invalid_argument("AVTX output buffer can't be nullptr!");
+    }
+
     byte_array_buffer buf(buffer.data(), buffer.size());
     std::istream      stream(&buf);
 
