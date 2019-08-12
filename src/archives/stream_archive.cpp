@@ -28,8 +28,8 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* out_
     std::istream      stream(&buf);
 
     // read header
-    SarcFileHeader header{};
-    stream.read((char*)&header, sizeof(SarcFileHeader));
+    SarcHeader header{};
+    stream.read((char*)&header, sizeof(SarcHeader));
     if (header.m_Magic != SARC_MAGIC) {
         throw std::runtime_error("Invalid SARC header magic!");
     }

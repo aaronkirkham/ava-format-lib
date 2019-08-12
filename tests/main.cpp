@@ -25,14 +25,14 @@ TEST_CASE("Archive Table Format", "[AvaFormatLib][TAB]")
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
-        std::vector<ava::ArchiveTable::TabFileEntry> entries;
+        std::vector<ava::ArchiveTable::TabEntry> entries;
         REQUIRE_THROWS_AS(ava::ArchiveTable::ReadTab({}, &entries), std::invalid_argument);
         REQUIRE_THROWS_AS(ava::ArchiveTable::ReadTab(buffer, nullptr), std::invalid_argument);
     }
 
     SECTION("file was parsed and entries vector has results")
     {
-        std::vector<ava::ArchiveTable::TabFileEntry> entries;
+        std::vector<ava::ArchiveTable::TabEntry> entries;
         REQUIRE_NOTHROW(ava::ArchiveTable::ReadTab(buffer, &entries));
         REQUIRE_FALSE(entries.empty());
         REQUIRE(entries[0].m_NameHash == 0xbeea6bb0);

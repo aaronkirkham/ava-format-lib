@@ -25,8 +25,8 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
     std::istream      stream(&buf);
 
     // read header
-    AafFileHeader header;
-    stream.read((char*)&header, sizeof(AafFileHeader));
+    AafHeader header;
+    stream.read((char*)&header, sizeof(AafHeader));
     if (header.m_Magic != AAF_MAGIC) {
         throw std::runtime_error("Invalid AAF header magic!");
     }
@@ -37,8 +37,8 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
     for (uint32_t i = 0; i < header.m_ChunkCount; ++i) {
         const auto start_pos = stream.tellg();
 
-        AafFileChunk chunk;
-        stream.read((char*)&chunk, sizeof(AafFileChunk));
+        AafChunk chunk;
+        stream.read((char*)&chunk, sizeof(AafChunk));
         if (chunk.m_Magic != AAF_CHUNK_MAGIC) {
             throw std::runtime_error("Invalid AAF chunk magic!");
         }

@@ -25,8 +25,8 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
     std::istream      stream(&buf);
 
     // read header
-    AvtxFileHeader header;
-    stream.read((char*)&header, sizeof(AvtxFileHeader));
+    AvtxHeader header;
+    stream.read((char*)&header, sizeof(AvtxHeader));
     if (header.m_Magic != AVTX_MAGIC) {
         throw std::runtime_error("Invalid AVTX header magic!");
     }
@@ -41,13 +41,13 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
 #endif
 }
 
-uint8_t FindBestStream(const AvtxFileHeader& header, bool only_source)
+uint8_t FindBestStream(const AvtxHeader& header, bool only_source)
 {
     uint8_t biggest      = 0;
     uint8_t stream_index = 0;
 
     for (uint32_t i = 0; i < AVTX_MAX_STREAMS; ++i) {
-        const AvtxFileStream& stream = header.m_Streams[i];
+        const AvtxStream& stream = header.m_Streams[i];
         if (stream.m_Size == 0) {
             continue;
         }
@@ -61,7 +61,7 @@ uint8_t FindBestStream(const AvtxFileHeader& header, bool only_source)
     return stream_index;
 }
 
-uint32_t GetHighestRank(const AvtxFileHeader& header, uint8_t stream_index)
+uint32_t GetHighestRank(const AvtxHeader& header, uint8_t stream_index)
 {
     uint32_t rank = 0;
     for (uint32_t i = 0; i < AVTX_MAX_STREAMS; ++i) {

@@ -25,28 +25,28 @@ enum class PropertyType : uint8_t {
 };
 
 #pragma pack(push, 1)
-struct RtpcFileHeader {
+struct RtpcHeader {
     uint32_t m_Magic;
     uint32_t m_Version;
 };
 
-struct RtpcFileNode {
+struct RtpcNode {
     uint32_t m_Namehash;
     uint32_t m_DataOffset;
     uint16_t m_PropertyCount;
     uint16_t m_InstanceCount;
 };
 
-struct RtpcFileProperty {
+struct RtpcProperty {
     uint32_t     m_Namehash;
     uint32_t     m_DataOffset;
     PropertyType m_Type;
 };
 #pragma pack(pop)
 
-static_assert(sizeof(RtpcFileHeader) == 0x8, "RtpcFileHeader alignment is wrong!");
-static_assert(sizeof(RtpcFileNode) == 0xC, "RtpcFileNode alignment is wrong!");
-static_assert(sizeof(RtpcFileProperty) == 0x9, "RtpcFileProperty alignment is wrong!");
+static_assert(sizeof(RtpcHeader) == 0x8, "RtpcHeader alignment is wrong!");
+static_assert(sizeof(RtpcNode) == 0xC, "RtpcNode alignment is wrong!");
+static_assert(sizeof(RtpcProperty) == 0x9, "RtpcProperty alignment is wrong!");
 
 void Parse(const std::vector<uint8_t>& buffer);
 }; // namespace ava::RuntimePropertyContainer

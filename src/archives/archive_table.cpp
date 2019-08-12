@@ -8,8 +8,8 @@
 
 namespace ava::ArchiveTable
 {
-void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabFileEntry>* out_entries,
-             std::vector<TabFileCompressedBlock>* out_compressed_blocks)
+void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entries,
+             std::vector<TabCompressedBlock>* out_compressed_blocks)
 {
     if (buffer.empty()) {
         throw std::invalid_argument("TAB input buffer can't be empty!");
@@ -23,8 +23,8 @@ void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabFileEntry>* out_
     std::istream      stream(&buf);
 
     // read header
-    TabFileHeader header{};
-    stream.read((char*)&header, sizeof(TabFileHeader));
+    TabHeader header{};
+    stream.read((char*)&header, sizeof(TabHeader));
     if (header.m_Magic != TAB_MAGIC) {
         throw std::runtime_error("Invalid TAB header magic! (Input file isn't .TAB?)");
     }
@@ -35,26 +35,26 @@ void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabFileEntry>* out_
 
     if (out_compressed_blocks) {
         out_compressed_blocks->resize(num_compressed_blocks);
-        stream.read((char*)out_compressed_blocks->data(), sizeof(TabFileCompressedBlock) * num_compressed_blocks);
+        stream.read((char*)out_compressed_blocks->data(), sizeof(TabCompressedBlock) * num_compressed_blocks);
     } else {
-        stream.ignore(sizeof(TabFileCompressedBlock) * num_compressed_blocks);
+        stream.ignore(sizeof(TabCompressedBlock) * num_compressed_blocks);
     }
 
     // read entries
     while (static_cast<int32_t>(stream.tellg()) + 20 <= buffer.size()) {
-        TabFileEntry entry;
-        stream.read((char*)&entry, sizeof(TabFileEntry));
+        TabEntry entry;
+        stream.read((char*)&entry, sizeof(TabEntry));
         out_entries->emplace_back(std::move(entry));
     }
 }
 
-bool ReadTabEntry(const std::vector<uint8_t>& buffer, uint32_t name_hash, TabFileEntry* out_entry)
+bool ReadTabEntry(const std::vector<uint8_t>& buffer, uint32_t name_hash, TabEntry* out_entry)
 {
-    std::vector<TabFileEntry> entries;
+    std::vector<TabEntry> entries;
     ReadTab(buffer, &entries);
 
     const auto it = std::find_if(entries.begin(), entries.end(),
-                                 [name_hash](const TabFileEntry& entry) { return entry.m_NameHash == name_hash; });
+                                 [name_hash](const TabEntry& entry) { return entry.m_NameHash == name_hash; });
     if (it != entries.end()) {
         *out_entry = (*it);
         return true;
@@ -75,7 +75,7 @@ void ReadBufferFromArchive(const std::vector<uint8_t>& buffer, uint32_t name_has
     }
 
     // read the tab entry
-    TabFileEntry entry{};
+    TabEntry entry{};
     if (!ReadTabEntry(tab_filename, name_hash, &entry)) {
         throw std::runtime_error("Can't find entry in TAB file!");
     }

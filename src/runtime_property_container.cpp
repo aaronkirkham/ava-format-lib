@@ -17,30 +17,30 @@ void Parse(const std::vector<uint8_t>& buffer)
     std::istream      stream(&buf);
 
     // read header
-    RtpcFileHeader header;
-    stream.read((char*)&header, sizeof(RtpcFileHeader));
+    RtpcHeader header;
+    stream.read((char*)&header, sizeof(RtpcHeader));
     if (header.m_Magic != RTPC_MAGIC) {
         throw std::runtime_error("Invalid RTPC header magic!");
     }
 
     // read the root node
-    RtpcFileNode root_node;
-    stream.read((char*)&root_node, sizeof(RtpcFileNode));
+    RtpcNode root_node;
+    stream.read((char*)&root_node, sizeof(RtpcNode));
 
-    std::queue<RtpcFileNode>     instance_queue;
-    std::queue<RtpcFileProperty> property_queue;
+    std::queue<RtpcNode>     instance_queue;
+    std::queue<RtpcProperty> property_queue;
 
     instance_queue.push(root_node);
 
     // read all instance properties
     while (!instance_queue.empty()) {
-        const RtpcFileNode& node = instance_queue.front();
+        const RtpcNode& node = instance_queue.front();
         stream.seekg(node.m_DataOffset);
 
         // read all node properties
         for (uint16_t i = 0; i < node.m_PropertyCount; ++i) {
-            RtpcFileProperty prop;
-            stream.read((char*)&prop, sizeof(RtpcFileProperty));
+            RtpcProperty prop;
+            stream.read((char*)&prop, sizeof(RtpcProperty));
 
             property_queue.push(std::move(prop));
         }
@@ -50,8 +50,8 @@ void Parse(const std::vector<uint8_t>& buffer)
 
         // read all node instances
         for (uint16_t i = 0; i < node.m_InstanceCount; ++i) {
-            RtpcFileNode node;
-            stream.read((char*)&node, sizeof(RtpcFileNode));
+            RtpcNode node;
+            stream.read((char*)&node, sizeof(RtpcNode));
 
             instance_queue.push(std::move(node));
         }
