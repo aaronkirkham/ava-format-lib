@@ -170,3 +170,22 @@ TEST_CASE("Avalanche Data Format", "[AvaFormatLib][ADF]")
         REQUIRE(weapon_tweaks->Sniper.InitialRandomAimDistance == 1.5f);
     }
 }
+
+TEST_CASE("Render Block Model", "[AvaFormatLib][RBMDL]")
+{
+    FileBuffer buffer;
+    REQUIRE(ReadFile("../tests/data/model.rbm", &buffer));
+
+    SECTION("invalid input argument throws std::invalid_argument")
+    {
+        static auto hash_handler = [](uint32_t hash, const std::vector<uint8_t>& buffer) {};
+        REQUIRE_THROWS_AS(ava::RenderBlockModel::Parse({}, hash_handler), std::invalid_argument);
+        REQUIRE_THROWS_AS(ava::RenderBlockModel::Parse(buffer, nullptr), std::invalid_argument);
+    }
+
+    SECTION("file was parsed")
+    {
+        static auto hash_handler = [](uint32_t hash, const std::vector<uint8_t>& buffer) { REQUIRE_FALSE(true); };
+        REQUIRE_NOTHROW(ava::RenderBlockModel::Parse(buffer, hash_handler));
+    }
+}
