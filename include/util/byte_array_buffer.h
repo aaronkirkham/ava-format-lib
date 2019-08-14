@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <istream>
 #include <streambuf>
+#include <vector>
 
 class byte_array_buffer : public std::streambuf
 {
@@ -9,6 +10,14 @@ class byte_array_buffer : public std::streambuf
     byte_array_buffer(const uint8_t* begin, const size_t size)
         : begin_(begin)
         , end_(begin + size)
+        , current_(begin_)
+    {
+        assert(std::less_equal<const uint8_t*>()(begin_, end_));
+    }
+
+    byte_array_buffer(const std::vector<uint8_t>& buffer)
+        : begin_(buffer.data())
+        , end_(buffer.data() + buffer.size())
         , current_(begin_)
     {
         assert(std::less_equal<const uint8_t*>()(begin_, end_));

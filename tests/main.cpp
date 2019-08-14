@@ -7,21 +7,25 @@
 #include <fstream>
 
 using FileBuffer = std::vector<uint8_t>;
-void ReadFile(const std::filesystem::path& filename, FileBuffer* buffer)
+bool ReadFile(const std::filesystem::path& filename, FileBuffer* buffer)
 {
-    const auto size = std::filesystem::file_size(filename);
-    buffer->resize(size);
+    try {
+        const auto size = std::filesystem::file_size(filename);
+        buffer->resize(size);
 
-    std::ifstream stream(filename, std::ios::binary);
-    stream.read((char*)buffer->data(), size);
-    stream.close();
+        std::ifstream stream(filename, std::ios::binary);
+        stream.read((char*)buffer->data(), size);
+        stream.close();
+    } catch (...) {
+    }
+
+    return !buffer->empty();
 }
 
 TEST_CASE("Archive Table Format", "[AvaFormatLib][TAB]")
 {
     FileBuffer buffer;
-    ReadFile("../tests/data/game5.tab", &buffer);
-    REQUIRE_FALSE(buffer.empty());
+    REQUIRE(ReadFile("../tests/data/game5.tab", &buffer));
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
@@ -42,8 +46,7 @@ TEST_CASE("Archive Table Format", "[AvaFormatLib][TAB]")
 TEST_CASE("Avalanche Archive Format", "[AvaFormatLib][AAF]")
 {
     FileBuffer buffer;
-    ReadFile("../tests/data/grapplinghookwire.ee", &buffer);
-    REQUIRE_FALSE(buffer.empty());
+    REQUIRE(ReadFile("../tests/data/grapplinghookwire.ee", &buffer));
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
@@ -63,8 +66,7 @@ TEST_CASE("Avalanche Archive Format", "[AvaFormatLib][AAF]")
 TEST_CASE("Stream Archive", "[AvaFormatLib][SARC]")
 {
     FileBuffer buffer;
-    ReadFile("../tests/data/paratrooper_drop.ee", &buffer);
-    REQUIRE_FALSE(buffer.empty());
+    REQUIRE(ReadFile("../tests/data/paratrooper_drop.ee", &buffer));
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
@@ -86,8 +88,7 @@ TEST_CASE("Stream Archive", "[AvaFormatLib][SARC]")
 TEST_CASE("Stream Archive TOC", "[AvaFormatLib][TOC]")
 {
     FileBuffer buffer;
-    ReadFile("../tests/data/grapplinghookwire.ee.toc", &buffer);
-    REQUIRE_FALSE(buffer.empty());
+    REQUIRE(ReadFile("../tests/data/grapplinghookwire.ee.toc", &buffer));
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
@@ -108,8 +109,7 @@ TEST_CASE("Stream Archive TOC", "[AvaFormatLib][TOC]")
 TEST_CASE("Avalanche Data Format", "[AvaFormatLib][ADF]")
 {
     FileBuffer buffer;
-    ReadFile("../tests/data/weapons.aisystunec", &buffer);
-    REQUIRE_FALSE(buffer.empty());
+    REQUIRE(ReadFile("../tests/data/weapons.aisystunec", &buffer));
 
     struct AISpring {
         float Speed;

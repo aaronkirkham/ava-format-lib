@@ -19,7 +19,7 @@ void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entr
         throw std::invalid_argument("TAB output entries vector can't be nullptr!");
     }
 
-    byte_array_buffer buf(buffer.data(), buffer.size());
+    byte_array_buffer buf(buffer);
     std::istream      stream(&buf);
 
     // read header

@@ -24,7 +24,7 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* out_
         throw std::invalid_argument("SARC output entries vector can't be nullptr!");
     }
 
-    byte_array_buffer buf(buffer.data(), buffer.size());
+    byte_array_buffer buf(buffer);
     std::istream      stream(&buf);
 
     // read header

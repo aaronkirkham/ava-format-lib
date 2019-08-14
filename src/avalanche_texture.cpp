@@ -21,7 +21,7 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
         throw std::invalid_argument("AVTX output buffer can't be nullptr!");
     }
 
-    byte_array_buffer buf(buffer.data(), buffer.size());
+    byte_array_buffer buf(buffer);
     std::istream      stream(&buf);
 
     // read header

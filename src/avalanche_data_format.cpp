@@ -1,6 +1,5 @@
 #include "../include/avalanche_data_format.h"
 
-#include "../include/util/byte_array_buffer.h"
 #include "../include/util/hashlittle.h"
 
 #include <algorithm>
