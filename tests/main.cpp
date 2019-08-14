@@ -17,6 +17,7 @@ bool ReadFile(const std::filesystem::path& filename, FileBuffer* buffer)
         stream.read((char*)buffer->data(), size);
         stream.close();
     } catch (...) {
+        return false;
     }
 
     return !buffer->empty();
