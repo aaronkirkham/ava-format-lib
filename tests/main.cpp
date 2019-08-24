@@ -168,6 +168,8 @@ TEST_CASE("Avalanche Data Format", "[AvaFormatLib][ADF]")
         REQUIRE_NOTHROW(adf.ReadInstance(0xd9066df1, 0x8dfb5000, (void**)&weapon_tweaks));
         REQUIRE(weapon_tweaks != nullptr);
         REQUIRE(weapon_tweaks->Sniper.InitialRandomAimDistance == 1.5f);
+
+        std::free(weapon_tweaks);
     }
 }
 
