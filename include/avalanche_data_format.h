@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
 #include <vector>
 
 namespace ava::AvalancheDataFormat
@@ -31,6 +32,21 @@ enum EHeaderFlags {
     RELATIVE_OFFSETS_EXISTS        = (1 << 0),
     HAS_INLINE_ARRAY_WITH_POINTERS = (1 << 1),
 };
+
+#pragma pack(push, 8)
+template <typename T> struct SAdfArray {
+    T*       m_Data;
+    uint32_t m_Count;
+};
+
+struct SAdfDeferredPtr {
+    void*    m_Ptr;
+    uint32_t m_Type;
+};
+
+static_assert(sizeof(SAdfArray<void>) == 0x10, "SAdfArray alignment is wrong!");
+static_assert(sizeof(SAdfDeferredPtr) == 0x10, "SAdfDeferredPtr alignment is wrong!");
+#pragma pack(pop)
 
 #pragma pack(push, 1)
 struct AdfHeader {
@@ -132,10 +148,11 @@ void ParseHeader(const std::vector<uint8_t>& buffer, AdfHeader* out_header, cons
 class AvalancheDataFormat
 {
   private:
-    std::vector<uint8_t>     m_Buffer;
-    AdfHeader*               m_Header;
-    std::vector<AdfType*>    m_Types;
-    std::vector<std::string> m_Strings;
+    std::vector<uint8_t>            m_Buffer;
+    AdfHeader*                      m_Header;
+    std::vector<AdfType*>           m_Types;
+    std::vector<std::string>        m_Strings;
+    std::map<uint32_t, std::string> m_StringHashes;
 
     void     AddBuiltInType(EAdfType type, ScalarType scalar_type, uint32_t size, const char* name, uint16_t flags = 3);
     AdfType* FindType(const uint32_t type_hash);
@@ -171,5 +188,15 @@ class AvalancheDataFormat
     void GetInstance(uint32_t index, SInstanceInfo* out_instance_info);
     void ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instance);
     void ReadInstance(const SInstanceInfo& instance_info, void** out_instance);
+
+	const char* HashLookup(const uint32_t hash)
+    {
+        const auto it = m_StringHashes.find(hash);
+        if (it == m_StringHashes.end()) {
+            return "";
+        }
+
+        return it->second.c_str();
+    }
 };
 }; // namespace ava::AvalancheDataFormat

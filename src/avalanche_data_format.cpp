@@ -70,15 +70,6 @@ AvalancheDataFormat::~AvalancheDataFormat()
     }
 }
 
-/**
- * Add new type to the Adf Types vector
- *
- * @param type Type of the type
- * @param scalar_type Type of scalar
- * @param size Size of the type
- * @param name Name of the type
- * @param flags Misc type flags
- */
 void AvalancheDataFormat::AddBuiltInType(EAdfType type, ScalarType scalar_type, uint32_t size, const char* name,
                                          uint16_t flags)
 {
@@ -120,21 +111,15 @@ AdfType* AvalancheDataFormat::FindType(const uint32_t type_hash)
     return (it != m_Types.end() ? *it : nullptr);
 }
 
-/**
- * Add interal ADF types from a buffer
- *
- * @param buffer Buffer containing ADF types
- */
 void AvalancheDataFormat::AddTypes(const std::vector<uint8_t>& buffer)
 {
     AdfHeader header;
     ParseHeader(buffer, &header);
 
-#if 0
-	// read string hashes
+    // read string hashes
     {
         uint64_t    offset = 0;
-        const char* hashes = &data[header.m_FirstStringHashOffset];
+        const char* hashes = (const char*)&buffer[header.m_FirstStringHashOffset];
         for (uint32_t i = 0; i < header.m_StringHashCount; ++i) {
             const char*    str    = &hashes[offset];
             const auto     length = (strlen(str) + 1);
@@ -146,7 +131,6 @@ void AvalancheDataFormat::AddTypes(const std::vector<uint8_t>& buffer)
             offset += (length + sizeof(hash));
         }
     }
-#endif
 
     // preallocate the strings
     m_Strings.reserve(m_Strings.size() + header.m_StringCount);
