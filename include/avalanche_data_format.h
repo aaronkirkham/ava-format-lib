@@ -145,7 +145,7 @@ static_assert(sizeof(SInstanceInfo) == 0x1C, "SInstanceInfo alignment is wrong."
 
 void ParseHeader(const std::vector<uint8_t>& buffer, AdfHeader* out_header, const char** out_description = nullptr);
 
-class AvalancheDataFormat
+class ADF
 {
   private:
     std::vector<uint8_t>            m_Buffer;
@@ -180,8 +180,8 @@ class AvalancheDataFormat
     }
 
   public:
-    AvalancheDataFormat(const std::vector<uint8_t>& buffer);
-    virtual ~AvalancheDataFormat();
+    ADF(const std::vector<uint8_t>& buffer);
+    virtual ~ADF();
 
     void AddTypes(const std::vector<uint8_t>& buffer);
 
@@ -189,7 +189,7 @@ class AvalancheDataFormat
     void ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instance);
     void ReadInstance(const SInstanceInfo& instance_info, void** out_instance);
 
-	const char* HashLookup(const uint32_t hash)
+    const char* HashLookup(const uint32_t hash)
     {
         const auto it = m_StringHashes.find(hash);
         if (it == m_StringHashes.end()) {

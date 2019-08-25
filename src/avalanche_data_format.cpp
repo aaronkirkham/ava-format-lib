@@ -33,7 +33,7 @@ void ParseHeader(const std::vector<uint8_t>& buffer, AdfHeader* out_header, cons
     }
 }
 
-AvalancheDataFormat::AvalancheDataFormat(const std::vector<uint8_t>& buffer)
+ADF::ADF(const std::vector<uint8_t>& buffer)
     : m_Header((AdfHeader*)buffer.data())
     , m_Buffer(buffer)
 {
@@ -63,15 +63,14 @@ AvalancheDataFormat::AvalancheDataFormat(const std::vector<uint8_t>& buffer)
     AddTypes(buffer);
 }
 
-AvalancheDataFormat::~AvalancheDataFormat()
+ADF::~ADF()
 {
     for (auto& type : m_Types) {
         std::free(type);
     }
 }
 
-void AvalancheDataFormat::AddBuiltInType(EAdfType type, ScalarType scalar_type, uint32_t size, const char* name,
-                                         uint16_t flags)
+void ADF::AddBuiltInType(EAdfType type, ScalarType scalar_type, uint32_t size, const char* name, uint16_t flags)
 {
     char type_name[64];
     snprintf(type_name, sizeof(type_name), "%s%u%u%u", name, (uint32_t)type, size, size);
@@ -104,14 +103,14 @@ void AvalancheDataFormat::AddBuiltInType(EAdfType type, ScalarType scalar_type, 
     m_Types.push_back(def);
 }
 
-AdfType* AvalancheDataFormat::FindType(const uint32_t type_hash)
+AdfType* ADF::FindType(const uint32_t type_hash)
 {
     const auto it = std::find_if(m_Types.begin(), m_Types.end(),
                                  [type_hash](const AdfType* type) { return type->m_TypeHash == type_hash; });
     return (it != m_Types.end() ? *it : nullptr);
 }
 
-void AvalancheDataFormat::AddTypes(const std::vector<uint8_t>& buffer)
+void ADF::AddTypes(const std::vector<uint8_t>& buffer)
 {
     AdfHeader header;
     ParseHeader(buffer, &header);
@@ -187,7 +186,7 @@ void AvalancheDataFormat::AddTypes(const std::vector<uint8_t>& buffer)
  * @param index Index of the instance to read from the ADF buffer
  * @param out_instance_info Pointer to SInstanceInfo where the instance data will be written
  */
-void AvalancheDataFormat::GetInstance(uint32_t index, SInstanceInfo* out_instance_info)
+void ADF::GetInstance(uint32_t index, SInstanceInfo* out_instance_info)
 {
     if (!out_instance_info) {
         throw std::invalid_argument("ADF GetInstance output instance can't be nullptr!");
@@ -221,7 +220,7 @@ void AvalancheDataFormat::GetInstance(uint32_t index, SInstanceInfo* out_instanc
  * @param type_hash Type hash of the instance to read from the ADF buffer
  * @param out_instance Pointer to an instance where the data will be written
  */
-void AvalancheDataFormat::ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instance)
+void ADF::ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instance)
 {
     // find the instance
     AdfInstance* current_instance = nullptr;
@@ -276,7 +275,7 @@ void AvalancheDataFormat::ReadInstance(uint32_t name_hash, uint32_t type_hash, v
  * @param instance_info Instance info returned from GetInstance
  * @param out_instance Pointer to an instance where the data will be written
  */
-void AvalancheDataFormat::ReadInstance(const SInstanceInfo& instance_info, void** out_instance)
+void ADF::ReadInstance(const SInstanceInfo& instance_info, void** out_instance)
 {
     return ReadInstance(instance_info.m_NameHash, instance_info.m_TypeHash, out_instance);
 }

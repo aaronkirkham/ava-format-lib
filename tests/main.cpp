@@ -145,14 +145,14 @@ TEST_CASE("Avalanche Data Format", "[AvaFormatLib][ADF]")
         REQUIRE_THROWS_AS(
             []() {
                 // invalid input buffer
-                ava::AvalancheDataFormat::AvalancheDataFormat adf({});
+                ava::AvalancheDataFormat::ADF adf({});
             }(),
             std::invalid_argument);
     }
 
     SECTION("can get root instance")
     {
-        ava::AvalancheDataFormat::AvalancheDataFormat adf(buffer);
+        ava::AvalancheDataFormat::ADF adf(buffer);
 
         ava::AvalancheDataFormat::SInstanceInfo instance_info{};
         REQUIRE_NOTHROW(adf.GetInstance(0, &instance_info));
@@ -161,7 +161,7 @@ TEST_CASE("Avalanche Data Format", "[AvaFormatLib][ADF]")
 
     SECTION("can read root instance")
     {
-        ava::AvalancheDataFormat::AvalancheDataFormat adf(buffer);
+        ava::AvalancheDataFormat::ADF adf(buffer);
 
         // read instance
         WeaponTweaks* weapon_tweaks = nullptr;
