@@ -1,6 +1,7 @@
 #include "../include/avalanche_data_format.h"
 
 #include "../include/util/hashlittle.h"
+#include "../include/util/math.h"
 
 #include <algorithm>
 
@@ -108,6 +109,78 @@ AdfType* ADF::FindType(const uint32_t type_hash)
     const auto it = std::find_if(m_Types.begin(), m_Types.end(),
                                  [type_hash](const AdfType* type) { return type->m_TypeHash == type_hash; });
     return (it != m_Types.end() ? *it : nullptr);
+}
+
+void ADF::LoadInlineOffsets(const AdfType* type, char* payload, const uint32_t offset)
+{
+    static auto DoesTypeNeedLoading = [](const EAdfType type) {
+        return (type == EAdfType::STRUCTURE || type == EAdfType::POINTER || type == EAdfType::ARRAY
+                || type == EAdfType::DEFERRED || type == EAdfType::STRING);
+    };
+
+    switch (type->m_Type) {
+        case EAdfType::STRUCTURE: {
+            uint32_t member_offset = 0;
+            for (uint32_t i = 0; i < type->m_MemberCount; ++i) {
+                const AdfMember& member      = type->m_Members[i];
+                const AdfType*   member_type = FindType(member.m_TypeHash);
+
+                const uint32_t payload_offset = (offset + member_offset);
+                const uint32_t alignment      = ava::math::align_distance(payload_offset, member_type->m_Align);
+
+                if (DoesTypeNeedLoading(member_type->m_Type)) {
+                    LoadInlineOffsets(member_type, payload, (payload_offset + alignment));
+                }
+
+                member_offset += (member_type->m_Size + alignment);
+            }
+
+            break;
+        }
+
+        case EAdfType::POINTER:
+        case EAdfType::DEFERRED: {
+            const uint32_t real_offset = *(uint32_t*)&payload[offset];
+            if (real_offset) {
+                *(uint64_t*)&payload[offset] = (uint64_t)((char*)payload + real_offset);
+
+                const uint32_t type_hash =
+                    (type->m_Type == EAdfType::POINTER ? type->m_SubTypeHash : *(uint32_t*)&payload[offset + 8]);
+                const AdfType* ptr_type = FindType(type_hash);
+                if (ptr_type) {
+                    LoadInlineOffsets(ptr_type, payload, real_offset);
+                }
+            }
+
+            break;
+        }
+
+        case EAdfType::ARRAY: {
+            const uint32_t real_offset = *(uint32_t*)&payload[offset];
+            if (real_offset) {
+                *(uint64_t*)&payload[offset] = (uint64_t)((char*)payload + real_offset);
+
+                const AdfType* subtype = FindType(type->m_SubTypeHash);
+                if (subtype && DoesTypeNeedLoading(subtype->m_Type)) {
+                    const uint32_t count = *(uint32_t*)&payload[offset + 8];
+                    for (uint32_t i = 0; i < count; ++i) {
+                        LoadInlineOffsets(subtype, payload, (real_offset + (subtype->m_Size * i)));
+                    }
+                }
+            }
+
+            break;
+        }
+
+        case EAdfType::STRING: {
+            const uint32_t real_offset = *(uint32_t*)&payload[offset];
+            if (real_offset) {
+                *(uint64_t*)&payload[offset] = (uint64_t)((char*)payload + real_offset);
+            }
+
+            break;
+        }
+    }
 }
 
 void ADF::AddTypes(const std::vector<uint8_t>& buffer)
@@ -247,8 +320,7 @@ void ADF::ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instan
 
     bool has_32bit_inline_arrays = ~LOBYTE(m_Header->m_Flags) & EHeaderFlags::RELATIVE_OFFSETS_EXISTS;
     if (has_32bit_inline_arrays) {
-        // LoadInlineOffsets(type, (char*)mem);
-        throw std::runtime_error("has_32bit_inline_arrays");
+        LoadInlineOffsets(type, (char*)mem);
     } else {
         // adjust the relative offsets
         uint64_t current_offset = 0;

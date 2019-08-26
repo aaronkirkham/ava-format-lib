@@ -156,6 +156,7 @@ class ADF
 
     void     AddBuiltInType(EAdfType type, ScalarType scalar_type, uint32_t size, const char* name, uint16_t flags = 3);
     AdfType* FindType(const uint32_t type_hash);
+    void     LoadInlineOffsets(const AdfType* type, char* payload, const uint32_t offset = 0);
 
     const char* GetString(uint64_t index, const AdfHeader* header, const std::vector<uint8_t>& buffer)
     {
