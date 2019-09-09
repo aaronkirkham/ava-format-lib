@@ -7,7 +7,7 @@
 
 namespace ava::RuntimePropertyContainer
 {
-void Parse(const std::vector<uint8_t>& buffer)
+RuntimeContainer::RuntimeContainer(const std::vector<uint8_t>& buffer)
 {
     if (buffer.empty()) {
         throw std::invalid_argument("RTPC input buffer can't be empty!");
@@ -23,40 +23,26 @@ void Parse(const std::vector<uint8_t>& buffer)
         throw std::runtime_error("Invalid RTPC header magic!");
     }
 
-    // read the root node
-    RtpcNode root_node;
-    stream.read((char*)&root_node, sizeof(RtpcNode));
+    //
+    m_Container = (RtpcContainer*)(buffer.data() + sizeof(RtpcHeader));
+}
 
-    std::queue<RtpcNode>     instance_queue;
-    std::queue<RtpcProperty> property_queue;
+RuntimeContainer::~RuntimeContainer()
+{
+    //
+}
 
-    instance_queue.push(root_node);
-
-    // read all instance properties
-    while (!instance_queue.empty()) {
-        const RtpcNode& node = instance_queue.front();
-        stream.seekg(node.m_DataOffset);
-
-        // read all node properties
-        for (uint16_t i = 0; i < node.m_PropertyCount; ++i) {
-            RtpcProperty prop;
-            stream.read((char*)&prop, sizeof(RtpcProperty));
-
-            property_queue.push(std::move(prop));
-        }
-
-        // 4 byte boundary alignment
-        // @TODO
-
-        // read all node instances
-        for (uint16_t i = 0; i < node.m_InstanceCount; ++i) {
-            RtpcNode node;
-            stream.read((char*)&node, sizeof(RtpcNode));
-
-            instance_queue.push(std::move(node));
-        }
-
-        instance_queue.pop();
+void RuntimeContainer::GetContainer(const uint32_t key)
+{
+    //
+    uintptr_t ptr;
+    if (m_Container && m_Container->m_ContainerCount) {
+        ptr = (0x0 + 3 + (m_Container->m_VariantCount * sizeof(RtpcContainerVariant)) + m_Container->m_DataOffset);
     }
+}
+
+void RuntimeContainer::GetVariant(const uint32_t key)
+{
+    //
 }
 }; // namespace ava::RuntimePropertyContainer
