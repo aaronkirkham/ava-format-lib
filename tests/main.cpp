@@ -25,20 +25,22 @@ bool ReadFile(const std::filesystem::path& filename, FileBuffer* buffer)
 
 TEST_CASE("Archive Table Format", "[AvaFormatLib][TAB]")
 {
+    using namespace ava::ArchiveTable;
+
     FileBuffer buffer;
     REQUIRE(ReadFile("../tests/data/game5.tab", &buffer));
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
-        std::vector<ava::ArchiveTable::TabEntry> entries;
-        REQUIRE_THROWS_AS(ava::ArchiveTable::ReadTab({}, &entries), std::invalid_argument);
-        REQUIRE_THROWS_AS(ava::ArchiveTable::ReadTab(buffer, nullptr), std::invalid_argument);
+        std::vector<TabEntry> entries;
+        REQUIRE_THROWS_AS(ReadTab({}, &entries), std::invalid_argument);
+        REQUIRE_THROWS_AS(ReadTab(buffer, nullptr), std::invalid_argument);
     }
 
     SECTION("file was parsed and entries vector has results")
     {
-        std::vector<ava::ArchiveTable::TabEntry> entries;
-        REQUIRE_NOTHROW(ava::ArchiveTable::ReadTab(buffer, &entries));
+        std::vector<TabEntry> entries;
+        REQUIRE_NOTHROW(ReadTab(buffer, &entries));
         REQUIRE_FALSE(entries.empty());
         REQUIRE(entries[0].m_NameHash == 0xbeea6bb0);
     }
@@ -46,40 +48,44 @@ TEST_CASE("Archive Table Format", "[AvaFormatLib][TAB]")
 
 TEST_CASE("Avalanche Archive Format", "[AvaFormatLib][AAF]")
 {
+    using namespace ava::AvalancheArchiveFormat;
+
     FileBuffer buffer;
     REQUIRE(ReadFile("../tests/data/grapplinghookwire.ee", &buffer));
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
         FileBuffer out_buffer;
-        REQUIRE_THROWS_AS(ava::AvalancheArchiveFormat::Parse({}, &out_buffer), std::invalid_argument);
-        REQUIRE_THROWS_AS(ava::AvalancheArchiveFormat::Parse(buffer, nullptr), std::invalid_argument);
+        REQUIRE_THROWS_AS(Parse({}, &out_buffer), std::invalid_argument);
+        REQUIRE_THROWS_AS(Parse(buffer, nullptr), std::invalid_argument);
     }
 
     /*SECTION("has valid output buffer")
     {
         FileBuffer out_buffer;
-        REQUIRE_NOTHROW(ava::AvalancheArchiveFormat::Parse(buffer, &out_buffer));
+        REQUIRE_NOTHROW(Parse(buffer, &out_buffer));
         REQUIRE_FALSE(out_buffer.empty());
     }*/
 }
 
 TEST_CASE("Stream Archive", "[AvaFormatLib][SARC]")
 {
+    using namespace ava::StreamArchive;
+
     FileBuffer buffer;
     REQUIRE(ReadFile("../tests/data/paratrooper_drop.ee", &buffer));
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
-        std::vector<ava::StreamArchive::ArchiveEntry_t> entries;
-        REQUIRE_THROWS_AS(ava::StreamArchive::Parse({}, &entries), std::invalid_argument);
-        REQUIRE_THROWS_AS(ava::StreamArchive::Parse(buffer, nullptr), std::invalid_argument);
+        std::vector<ArchiveEntry_t> entries;
+        REQUIRE_THROWS_AS(Parse({}, &entries), std::invalid_argument);
+        REQUIRE_THROWS_AS(Parse(buffer, nullptr), std::invalid_argument);
     }
 
     SECTION("file was parsed and entries vector has results")
     {
-        std::vector<ava::StreamArchive::ArchiveEntry_t> entries;
-        REQUIRE_NOTHROW(ava::StreamArchive::Parse(buffer, &entries));
+        std::vector<ArchiveEntry_t> entries;
+        REQUIRE_NOTHROW(Parse(buffer, &entries));
         REQUIRE(entries.size() == 3);
         REQUIRE(entries[2].m_Filename
                 == "editor/entities/spawners/combatant_spawnrules/spawn_modules/paratrooper_drop.epe");
@@ -88,27 +94,54 @@ TEST_CASE("Stream Archive", "[AvaFormatLib][SARC]")
 
 TEST_CASE("Stream Archive TOC", "[AvaFormatLib][TOC]")
 {
+    using namespace ava::StreamArchive;
+
     FileBuffer buffer;
     REQUIRE(ReadFile("../tests/data/grapplinghookwire.ee.toc", &buffer));
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
-        std::vector<ava::StreamArchive::ArchiveEntry_t> entries;
-        REQUIRE_THROWS_AS(ava::StreamArchive::ParseTOC({}, &entries), std::invalid_argument);
-        REQUIRE_THROWS_AS(ava::StreamArchive::ParseTOC(buffer, nullptr), std::invalid_argument);
+        std::vector<ArchiveEntry_t> entries;
+        REQUIRE_THROWS_AS(ParseTOC({}, &entries), std::invalid_argument);
+        REQUIRE_THROWS_AS(ParseTOC(buffer, nullptr), std::invalid_argument);
     }
 
     SECTION("file was parsed and entries vector has results")
     {
-        std::vector<ava::StreamArchive::ArchiveEntry_t> entries;
-        REQUIRE_NOTHROW(ava::StreamArchive::ParseTOC(buffer, &entries));
+        std::vector<ArchiveEntry_t> entries;
+        REQUIRE_NOTHROW(ParseTOC(buffer, &entries));
         REQUIRE_FALSE(entries.empty());
         REQUIRE(entries[9].m_Filename == "effects/textures/t_smoke_blast_alpha_dif.ddsc");
     }
 }
 
+TEST_CASE("Runtime Property Container", "[AvaFormatLib][RTPC]")
+{
+    using namespace ava::RuntimePropertyContainer;
+
+    FileBuffer buffer;
+    REQUIRE(ReadFile("../tests/data/random_encounter_bombs_away.epe", &buffer));
+
+    SECTION("invalid input argument throws std::invalid_argument")
+    {
+        REQUIRE_THROWS_AS(
+            []() {
+                // invalid input buffer
+                RuntimeContainer rtpc({});
+            }(),
+            std::invalid_argument);
+    }
+
+    SECTION("123")
+    {
+        RuntimeContainer rtpc(buffer);
+    }
+}
+
 TEST_CASE("Avalanche Data Format", "[AvaFormatLib][ADF]")
 {
+    using namespace ava::AvalancheDataFormat;
+
     FileBuffer buffer;
     REQUIRE(ReadFile("../tests/data/weapons.aisystunec", &buffer));
 
@@ -145,23 +178,23 @@ TEST_CASE("Avalanche Data Format", "[AvaFormatLib][ADF]")
         REQUIRE_THROWS_AS(
             []() {
                 // invalid input buffer
-                ava::AvalancheDataFormat::ADF adf({});
+                ADF adf({});
             }(),
             std::invalid_argument);
     }
 
     SECTION("can get root instance")
     {
-        ava::AvalancheDataFormat::ADF adf(buffer);
+        ADF           adf(buffer);
+        SInstanceInfo instance_info{};
 
-        ava::AvalancheDataFormat::SInstanceInfo instance_info{};
         REQUIRE_NOTHROW(adf.GetInstance(0, &instance_info));
         REQUIRE(instance_info.m_NameHash == 0xd9066df1);
     }
 
     SECTION("can read root instance")
     {
-        ava::AvalancheDataFormat::ADF adf(buffer);
+        ADF adf(buffer);
 
         // read instance
         WeaponTweaks* weapon_tweaks = nullptr;
@@ -173,21 +206,82 @@ TEST_CASE("Avalanche Data Format", "[AvaFormatLib][ADF]")
     }
 }
 
+#if 0
 TEST_CASE("Render Block Model", "[AvaFormatLib][RBMDL]")
 {
+    using namespace ava::RenderBlockModel;
+
     FileBuffer buffer;
     REQUIRE(ReadFile("../tests/data/model.rbm", &buffer));
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
         static auto hash_handler = [](uint32_t hash, const std::vector<uint8_t>& buffer) {};
-        REQUIRE_THROWS_AS(ava::RenderBlockModel::Parse({}, hash_handler), std::invalid_argument);
-        REQUIRE_THROWS_AS(ava::RenderBlockModel::Parse(buffer, nullptr), std::invalid_argument);
+        REQUIRE_THROWS_AS(Parse({}, hash_handler), std::invalid_argument);
+        REQUIRE_THROWS_AS(Parse(buffer, nullptr), std::invalid_argument);
     }
 
     SECTION("file was parsed")
     {
         static auto hash_handler = [](uint32_t hash, const std::vector<uint8_t>& buffer) { REQUIRE_FALSE(true); };
-        REQUIRE_NOTHROW(ava::RenderBlockModel::Parse(buffer, hash_handler));
+        REQUIRE_NOTHROW(Parse(buffer, hash_handler));
+    }
+}
+#endif
+
+TEST_CASE("Avalanche Model Format", "[AvaFormatLib][AMF]")
+{
+    using namespace ava::AvalancheDataFormat;
+    using namespace ava::AvalancheModelFormat;
+
+    FileBuffer modelc_buffer;
+    REQUIRE(ReadFile("../tests/data/cow.modelc", &modelc_buffer));
+
+    FileBuffer meshc_buffer;
+    REQUIRE(ReadFile("../tests/data/cow.meshc", &meshc_buffer));
+
+    SECTION("invalid input argument throws std::invalid_argument")
+    {
+        ADF*             adf         = nullptr;
+        SAmfModel*       amf_model   = nullptr;
+        SAmfMeshHeader*  mesh_header = nullptr;
+        SAmfMeshBuffers* mesh_buffer = nullptr;
+        REQUIRE_THROWS_AS(ParseModelc({}, &adf, &amf_model), std::invalid_argument);
+        REQUIRE_THROWS_AS(ParseMeshc({}, &adf, &mesh_header, &mesh_buffer), std::invalid_argument);
+    }
+
+    SECTION("MODELC file was parsed")
+    {
+        ADF*       adf       = nullptr;
+        SAmfModel* amf_model = nullptr;
+        REQUIRE_NOTHROW(ParseModelc(modelc_buffer, &adf, &amf_model));
+
+        REQUIRE(adf != nullptr);
+        REQUIRE(amf_model != nullptr);
+
+        REQUIRE(amf_model->m_Mesh == 0xc316a3df);
+
+        std::free(adf);
+        std::free(amf_model);
+    }
+
+    SECTION("MESHC file was parsed")
+    {
+        ADF*             adf         = nullptr;
+        SAmfMeshHeader*  mesh_header = nullptr;
+        SAmfMeshBuffers* mesh_buffer = nullptr;
+        REQUIRE_NOTHROW(ParseMeshc(meshc_buffer, &adf, &mesh_header, &mesh_buffer));
+
+        REQUIRE(adf != nullptr);
+        REQUIRE(mesh_header != nullptr);
+        REQUIRE(mesh_buffer != nullptr);
+
+        REQUIRE(mesh_header->m_LodGroups.m_Count == 5);
+        REQUIRE(mesh_header->m_HighLodPath == 0x778851d8);
+        REQUIRE(mesh_buffer->m_VertexBuffers.m_Count == 1);
+
+        std::free(adf);
+        std::free(mesh_header);
+        std::free(mesh_buffer);
     }
 }
