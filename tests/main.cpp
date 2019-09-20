@@ -3,6 +3,8 @@
 
 #include <AvaFormatLib.h>
 
+#include "archives/legacy/archive_table.h"
+
 #include <filesystem>
 #include <fstream>
 
@@ -43,6 +45,29 @@ TEST_CASE("Archive Table Format", "[AvaFormatLib][TAB]")
         REQUIRE_NOTHROW(ReadTab(buffer, &entries));
         REQUIRE_FALSE(entries.empty());
         REQUIRE(entries[0].m_NameHash == 0xbeea6bb0);
+    }
+}
+
+TEST_CASE("Archive Table Format (LEGACY)", "[AvaFormatLib][TAB]")
+{
+    using namespace ava::legacy::ArchiveTable;
+
+    FileBuffer buffer;
+    REQUIRE(ReadFile("../tests/data/game67.tab", &buffer));
+
+    SECTION("invalid input argument throws std::invalid_argument")
+    {
+        std::vector<TabEntry> entries;
+        REQUIRE_THROWS_AS(ReadTab({}, &entries), std::invalid_argument);
+        REQUIRE_THROWS_AS(ReadTab(buffer, nullptr), std::invalid_argument);
+    }
+
+    SECTION("file was parsed and entries vector has results")
+    {
+        std::vector<TabEntry> entries;
+        REQUIRE_NOTHROW(ReadTab(buffer, &entries));
+        REQUIRE_FALSE(entries.empty());
+        REQUIRE(entries[0].m_NameHash == 0x966db7bc);
     }
 }
 
