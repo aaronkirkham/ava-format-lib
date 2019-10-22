@@ -8,5 +8,5 @@ Link AvaFormatLib.lib, and include AvaFormatLib.h.
 To compile the code you will need **Visual Studio 2017 or later** (or a C++17 compiler)
 - Clone this repository
 - Run `git submodule update --init` to clone dependencies
-- Run `configure.ps1` with PowerShell
-- Build `out/AvaFormatLib.sln` in Visual Studio
+- Run `configure.sh` inside a terminal
+- Build `projects/AvaFormatLib.sln` in Visual Studio
