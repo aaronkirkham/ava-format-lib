@@ -1,10 +1,9 @@
 workspace "AvaFormatLib"
   configurations { "Debug", "Release" }
-  location "out"
+  location "projects"
   systemversion "latest"
   language "C++"
-  targetdir "out/%{cfg.buildcfg}"
-  objdir "out"
+  targetdir "bin/%{cfg.buildcfg}"
   cppdialect "c++17"
   characterset "MBCS"
   architecture "x64"
@@ -15,6 +14,13 @@ workspace "AvaFormatLib"
 
   filter "configurations:Release"
     optimize "On"
+
+group "Dependencies"
+  project "zlib"
+    kind "StaticLib"
+    defines "DEF_WBITS=-15"
+    files { "deps/zlib/*.c", "deps/zlib/*.h" }
+    includedirs { "deps/zlib" }
 
 project "AvaFormatLib"
   kind "StaticLib"
