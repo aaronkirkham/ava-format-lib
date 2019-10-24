@@ -85,12 +85,12 @@ TEST_CASE("Avalanche Archive Format", "[AvaFormatLib][AAF]")
         REQUIRE_THROWS_AS(Parse(buffer, nullptr), std::invalid_argument);
     }
 
-    /*SECTION("has valid output buffer")
+    SECTION("has valid output buffer")
     {
         FileBuffer out_buffer;
         REQUIRE_NOTHROW(Parse(buffer, &out_buffer));
         REQUIRE_FALSE(out_buffer.empty());
-    }*/
+    }
 }
 
 TEST_CASE("Stream Archive", "[AvaFormatLib][SARC]")

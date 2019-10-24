@@ -17,8 +17,11 @@ workspace "AvaFormatLib"
 
 project "AvaFormatLib"
   kind "StaticLib"
+  defines { "_CRT_SECURE_NO_WARNINGS", "DEF_WBITS=-15" }
+  includedirs { "deps" }
   files { "src/**.cpp", "include/**.h" }
-  disablewarnings { "4200", "4267", "4334" }
+  files { "deps/zlib/*.c", "deps/zlib/*.h" }
+  -- disablewarnings { "4200", "4267", "4334" }
 
 project "UnitTests"
   kind "ConsoleApp"
@@ -26,10 +29,3 @@ project "UnitTests"
   dependson { "AvaFormatLib" }
   links { "AvaFormatLib" }
   includedirs { "include" }
-
-group "Dependencies"
-  project "zlib"
-    kind "StaticLib"
-    defines "DEF_WBITS=-15"
-    files { "deps/zlib/*.c", "deps/zlib/*.h" }
-    includedirs { "deps/zlib" }
