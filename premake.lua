@@ -15,13 +15,6 @@ workspace "AvaFormatLib"
   filter "configurations:Release"
     optimize "On"
 
-group "Dependencies"
-  project "zlib"
-    kind "StaticLib"
-    defines "DEF_WBITS=-15"
-    files { "deps/zlib/*.c", "deps/zlib/*.h" }
-    includedirs { "deps/zlib" }
-
 project "AvaFormatLib"
   kind "StaticLib"
   files { "src/**.cpp", "include/**.h" }
@@ -31,5 +24,12 @@ project "UnitTests"
   kind "ConsoleApp"
   files "tests/**"
   dependson { "AvaFormatLib" }
-  links { "out/%{cfg.buildcfg}/AvaFormatLib" }
+  links { "AvaFormatLib" }
   includedirs { "include" }
+
+group "Dependencies"
+  project "zlib"
+    kind "StaticLib"
+    defines "DEF_WBITS=-15"
+    files { "deps/zlib/*.c", "deps/zlib/*.h" }
+    includedirs { "deps/zlib" }
