@@ -91,9 +91,7 @@ void Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buff
         buf.write(compressed_block.data() + 2, chunk.m_CompressedSize);
 
         // write block padding
-        for (uint32_t i = 0; i < padding; ++i) {
-            buf.write((char*)&AAF_PADDING_BYTE, 1); // @TODO: improve this, each write will call vector::resize
-        }
+        buf.write((char*)&AAF_PADDING_BYTE, 1, padding);
     }
 }
 

@@ -13,13 +13,18 @@ class byte_vector_writer
 
     void write(const void* data, const size_t size)
     {
-        const size_t buffer_size = buffer_->size();
-        if (buffer_size < (offset_ + size)) {
-            buffer_->resize(buffer_size + size);
-        }
-
+        buffer_alloc(size);
         std::memcpy(buffer_->data() + offset_, data, size);
         offset_ += size;
+    }
+
+    void write(const void* data, const size_t size, const size_t count)
+    {
+        buffer_alloc(size * count);
+        for (size_t i = 0; i < count; ++i) {
+            std::memcpy(buffer_->data() + (offset_ + i), data, size);
+        }
+        offset_ += (size * count);
     }
 
     const size_t tellp() const
@@ -30,4 +35,12 @@ class byte_vector_writer
   private:
     std::vector<uint8_t>* buffer_;
     size_t                offset_;
+
+    void buffer_alloc(const size_t size)
+    {
+        const size_t buffer_size = buffer_->size();
+        if (buffer_size < (offset_ + size)) {
+            buffer_->resize(buffer_size + size);
+        }
+    }
 };
