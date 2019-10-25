@@ -1,4 +1,5 @@
 #define CATCH_CONFIG_MAIN
+#define CATCH_CONFIG_DEFAULT_REPORTER "compact"
 #include "catch.hpp"
 
 #include <AvaFormatLib.h>
@@ -9,13 +10,16 @@
 #include <fstream>
 
 using FileBuffer = std::vector<uint8_t>;
-bool ReadFile(const std::filesystem::path& filename, FileBuffer* buffer)
+bool ReadTestFile(const std::filesystem::path& filename, FileBuffer* buffer)
 {
+    std::filesystem::path name = (IsDebuggerPresent() ? "../" : "");
+    name                       = name / "tests" / "data" / filename;
+
     try {
-        const auto size = std::filesystem::file_size(filename);
+        const auto size = std::filesystem::file_size(name);
         buffer->resize(size);
 
-        std::ifstream stream(filename, std::ios::binary);
+        std::ifstream stream(name, std::ios::binary);
         stream.read((char*)buffer->data(), size);
         stream.close();
     } catch (...) {
@@ -25,12 +29,21 @@ bool ReadFile(const std::filesystem::path& filename, FileBuffer* buffer)
     return !buffer->empty();
 }
 
+template <typename T> std::size_t VectorFastHash(std::vector<T> const& vec)
+{
+    std::size_t seed = vec.size();
+    for (auto& i : vec) {
+        seed ^= i + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+    return seed;
+}
+
 TEST_CASE("Archive Table Format", "[AvaFormatLib][TAB]")
 {
     using namespace ava::ArchiveTable;
 
     FileBuffer buffer;
-    REQUIRE(ReadFile("../tests/data/game5.tab", &buffer));
+    ReadTestFile("game5.tab", &buffer);
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
@@ -53,7 +66,7 @@ TEST_CASE("Archive Table Format (LEGACY)", "[AvaFormatLib][TAB]")
     using namespace ava::legacy::ArchiveTable;
 
     FileBuffer buffer;
-    REQUIRE(ReadFile("../tests/data/game67.tab", &buffer));
+    ReadTestFile("game67.tab", &buffer);
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
@@ -76,20 +89,38 @@ TEST_CASE("Avalanche Archive Format", "[AvaFormatLib][AAF]")
     using namespace ava::AvalancheArchiveFormat;
 
     FileBuffer buffer;
-    REQUIRE(ReadFile("../tests/data/grapplinghookwire.ee", &buffer));
+    ReadTestFile("grapplinghookwire.ee", &buffer);
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
         FileBuffer out_buffer;
-        REQUIRE_THROWS_AS(Parse({}, &out_buffer), std::invalid_argument);
-        REQUIRE_THROWS_AS(Parse(buffer, nullptr), std::invalid_argument);
+        REQUIRE_THROWS_AS(Decompress({}, &out_buffer), std::invalid_argument);
+        REQUIRE_THROWS_AS(Decompress(buffer, nullptr), std::invalid_argument);
+        REQUIRE_THROWS_AS(Compress({}, &out_buffer), std::invalid_argument);
+        REQUIRE_THROWS_AS(Compress(buffer, nullptr), std::invalid_argument);
     }
 
-    SECTION("has valid output buffer")
+    SECTION("decompression has valid output buffer")
     {
-        FileBuffer out_buffer;
-        REQUIRE_NOTHROW(Parse(buffer, &out_buffer));
-        REQUIRE_FALSE(out_buffer.empty());
+        FileBuffer decompressed_buffer;
+        REQUIRE_NOTHROW(Decompress(buffer, &decompressed_buffer));
+        REQUIRE_FALSE(decompressed_buffer.empty());
+
+        SECTION("decompressed output buffer is valid SARC format")
+        {
+            std::vector<ava::StreamArchive::ArchiveEntry_t> entries;
+            REQUIRE_NOTHROW(ava::StreamArchive::Parse(decompressed_buffer, &entries));
+            REQUIRE(entries.size() == 81);
+            REQUIRE(entries[80].m_Filename == "editor/entities/gameobjects/grapplinghookwire.epe");
+        }
+
+        SECTION("compressed buffer matches original file buffer")
+        {
+            FileBuffer recompressed_buffer;
+            REQUIRE_NOTHROW(Compress(decompressed_buffer, &recompressed_buffer));
+            REQUIRE(recompressed_buffer.size() == buffer.size());
+            REQUIRE(VectorFastHash(recompressed_buffer) == VectorFastHash(buffer));
+        }
     }
 }
 
@@ -98,7 +129,7 @@ TEST_CASE("Stream Archive", "[AvaFormatLib][SARC]")
     using namespace ava::StreamArchive;
 
     FileBuffer buffer;
-    REQUIRE(ReadFile("../tests/data/paratrooper_drop.ee", &buffer));
+    ReadTestFile("paratrooper_drop.ee", &buffer);
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
@@ -122,7 +153,7 @@ TEST_CASE("Stream Archive TOC", "[AvaFormatLib][TOC]")
     using namespace ava::StreamArchive;
 
     FileBuffer buffer;
-    REQUIRE(ReadFile("../tests/data/grapplinghookwire.ee.toc", &buffer));
+    ReadTestFile("grapplinghookwire.ee.toc", &buffer);
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
@@ -145,7 +176,7 @@ TEST_CASE("Runtime Property Container", "[AvaFormatLib][RTPC]")
     using namespace ava::RuntimePropertyContainer;
 
     FileBuffer buffer;
-    REQUIRE(ReadFile("../tests/data/random_encounter_bombs_away.epe", &buffer));
+    ReadTestFile("random_encounter_bombs_away.epe", &buffer);
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
@@ -168,7 +199,7 @@ TEST_CASE("Avalanche Data Format", "[AvaFormatLib][ADF]")
     using namespace ava::AvalancheDataFormat;
 
     FileBuffer buffer;
-    REQUIRE(ReadFile("../tests/data/weapons.aisystunec", &buffer));
+    ReadTestFile("weapons.aisystunec", &buffer);
 
     struct AISpring {
         float Speed;
@@ -237,7 +268,7 @@ TEST_CASE("Render Block Model", "[AvaFormatLib][RBMDL]")
     using namespace ava::RenderBlockModel;
 
     FileBuffer buffer;
-    REQUIRE(ReadFile("../tests/data/model.rbm", &buffer));
+    ReadTestFile("model.rbm", &buffer);
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
@@ -260,10 +291,10 @@ TEST_CASE("Avalanche Model Format", "[AvaFormatLib][AMF]")
     using namespace ava::AvalancheModelFormat;
 
     FileBuffer modelc_buffer;
-    REQUIRE(ReadFile("../tests/data/cow.modelc", &modelc_buffer));
+    ReadTestFile("cow.modelc", &modelc_buffer);
 
     FileBuffer meshc_buffer;
-    REQUIRE(ReadFile("../tests/data/cow.meshc", &meshc_buffer));
+    ReadTestFile("cow.meshc", &meshc_buffer);
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
