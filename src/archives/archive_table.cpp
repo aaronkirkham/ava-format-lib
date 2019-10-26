@@ -130,6 +130,7 @@ void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, cons
                 out_buffer->resize(entry.m_UncompressedSize);
 
                 uint16_t current_block_index     = entry.m_CompressedBlockIndex;
+                uint32_t archive_buffer_offset   = entry.m_Offset;
                 uint32_t total_compressed_size   = entry.m_Size;
                 uint32_t total_uncompressed_size = 0;
 
@@ -138,7 +139,7 @@ void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, cons
 
                     // read the compressed block
                     std::vector<uint8_t> block_data(block.m_CompressedSize);
-                    std::memcpy(block_data.data(), archive_buffer.data() + entry.m_Offset + total_uncompressed_size,
+                    std::memcpy(block_data.data(), archive_buffer.data() + archive_buffer_offset,
                                 block.m_CompressedSize);
 
                     // decompress the block data
@@ -154,6 +155,7 @@ void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, cons
 
                     total_compressed_size -= block.m_CompressedSize;
                     total_uncompressed_size += block.m_UncompressedSize;
+                    archive_buffer_offset += block.m_CompressedSize;
                     current_block_index++;
                 }
             }
