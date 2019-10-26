@@ -4,6 +4,7 @@
 
 #include "archives/archive_table.h"
 #include "archives/avalanche_archive_format.h"
+#include "archives/oodle_helper.h"
 #include "archives/stream_archive.h"
 
 #include "models/avalanche_model_format.h"

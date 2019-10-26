@@ -45,8 +45,9 @@ static_assert(sizeof(TabEntry) == 0x14, "TabEntry alignment is wrong!");
 static_assert(sizeof(TabCompressedBlock) == 0x8, "TabCompressedBlock alignment is wrong!");
 
 void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entries,
-             std::vector<TabCompressedBlock>* out_compressed_blocks = nullptr);
+             std::vector<TabCompressedBlock>* out_compression_blocks = nullptr);
 bool ReadTabEntry(const std::vector<uint8_t>& buffer, uint32_t name_hash, TabEntry* out_entry);
-
-// void ReadBufferFromArchive(const std::vector<uint8_t>& buffer, uint32_t name_hash, std::vector<uint8_t>* out_buffer);
+void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, const TabEntry& entry,
+                                const std::vector<TabCompressedBlock>* compression_blocks,
+                                std::vector<uint8_t>*                  out_buffer);
 }; // namespace ava::ArchiveTable
