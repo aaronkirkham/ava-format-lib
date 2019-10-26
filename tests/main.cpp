@@ -59,7 +59,36 @@ TEST_CASE("Archive Table Format", "[AvaFormatLib][TAB]")
         REQUIRE_FALSE(entries.empty());
         REQUIRE(entries[0].m_NameHash == 0xbeea6bb0);
     }
+
+    // @TODO: ReadEntryBufferFromArchive
 }
+
+#if 0
+TEST_CASE("Oodle decompression")
+{
+    using namespace ava::ArchiveTable;
+
+    FileBuffer tab_buf, arc_buf;
+    ReadTestFile("game25.tab", &tab_buf);
+    ReadTestFile("game25.arc", &arc_buf);
+
+    // game25 not working???
+
+    // load oodle
+    ava::Oodle::LoadLib("D:/Steam/steamapps/common/Just Cause 4/oo2core_7_win64.dll");
+
+    std::vector<TabEntry>           entries;
+    std::vector<TabCompressedBlock> blocks;
+    REQUIRE_NOTHROW(ReadTab(tab_buf, &entries, &blocks));
+
+    FileBuffer out_file_buf;
+    REQUIRE_NOTHROW(ReadEntryBufferFromArchive(arc_buf, entries.at(0), &blocks, &out_file_buf));
+
+    __debugbreak();
+
+    ava::Oodle::UnloadLib();
+}
+#endif
 
 TEST_CASE("Archive Table Format (LEGACY)", "[AvaFormatLib][TAB]")
 {
@@ -82,6 +111,8 @@ TEST_CASE("Archive Table Format (LEGACY)", "[AvaFormatLib][TAB]")
         REQUIRE_FALSE(entries.empty());
         REQUIRE(entries[0].m_NameHash == 0x966db7bc);
     }
+
+    // @TODO: ReadEntryBufferFromArchive
 }
 
 TEST_CASE("Avalanche Archive Format", "[AvaFormatLib][AAF]")

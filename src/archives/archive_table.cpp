@@ -109,8 +109,8 @@ void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, cons
 
                 // uncompress the buffer
                 out_buffer->resize(entry.m_UncompressedSize);
-                const int64_t size = ava::OodleLZ::Decompress(compressed_data.data(), entry.m_Size, out_buffer->data(),
-                                                              entry.m_UncompressedSize);
+                const int64_t size = ava::Oodle::Decompress(compressed_data.data(), entry.m_Size, out_buffer->data(),
+                                                            entry.m_UncompressedSize);
 
                 // ensure the decompressed amount what we expected
                 if (size != entry.m_UncompressedSize) {
@@ -120,10 +120,6 @@ void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, cons
                     out_buffer->clear();
                     throw std::runtime_error("CompressionType_Oodle: Failed to decompress the buffer.");
                 }
-
-#ifdef _DEBUG
-                __debugbreak();
-#endif
             }
             // entry is using compression blocks
             else {
@@ -143,13 +139,14 @@ void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, cons
                                 block.m_CompressedSize);
 
                     // decompress the block data
-                    const int64_t size = ava::OodleLZ::Decompress(block_data.data(), block.m_CompressedSize,
-                                                                  out_buffer->data() + total_uncompressed_size,
-                                                                  block.m_UncompressedSize);
+                    const int64_t size =
+                        ava::Oodle::Decompress(block_data.data(), block.m_CompressedSize,
+                                               out_buffer->data() + total_uncompressed_size, block.m_UncompressedSize);
                     if (size != block.m_UncompressedSize) {
 #ifdef _DEBUG
                         __debugbreak();
 #endif
+                        out_buffer->clear();
                         throw std::runtime_error("CompressionType_Oodle: Failed to decompressed block buffer");
                     }
 
