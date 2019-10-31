@@ -9,6 +9,9 @@ class byte_vector_writer
         , offset_(0)
     {
         assert(buffer != nullptr);
+        if (!buffer->empty()) {
+            offset_ = buffer->size();
+        }
     }
 
     void write(const void* data, const size_t size)
@@ -22,7 +25,7 @@ class byte_vector_writer
     {
         buffer_alloc(size * count);
         for (size_t i = 0; i < count; ++i) {
-            std::memcpy(buffer_->data() + (offset_ + i), data, size);
+            std::memcpy(buffer_->data() + (offset_ + (i * size)), data, size);
         }
         offset_ += (size * count);
     }
