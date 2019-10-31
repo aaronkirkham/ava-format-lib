@@ -7,7 +7,7 @@ namespace ava::ArchiveTable
 {
 static constexpr uint32_t TAB_MAGIC = 0x424154; // "TAB"
 
-enum class CompressionType : uint8_t {
+enum CompressionType : uint8_t {
     CompressionType_None  = 0,
     CompressionType_Zlib  = 1,
     CompressionType_Oodle = 4,
@@ -50,4 +50,8 @@ bool ReadTabEntry(const std::vector<uint8_t>& buffer, uint32_t name_hash, TabEnt
 void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, const TabEntry& entry,
                                 const std::vector<TabCompressedBlock>* compression_blocks,
                                 std::vector<uint8_t>*                  out_buffer);
+
+void WriteEntry(const std::string& filename, const std::vector<uint8_t>& file_buffer,
+                std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer,
+                CompressionType compression = CompressionType_None);
 }; // namespace ava::ArchiveTable

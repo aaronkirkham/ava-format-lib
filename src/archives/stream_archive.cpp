@@ -124,7 +124,7 @@ void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* o
         throw std::invalid_argument("SARC TOC output entries vector can't be nullptr!");
     }
 
-    byte_array_buffer buf(buffer.data(), buffer.size());
+    byte_array_buffer buf(buffer);
     std::istream      stream(&buf);
 
     // read entries

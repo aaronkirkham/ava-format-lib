@@ -3,6 +3,7 @@
 #include "../../include/archives/oodle_helper.h"
 
 #include "../../include/util/byte_array_buffer.h"
+#include "../../include/util/byte_vector_writer.h"
 #include "../../include/util/hashlittle.h"
 
 #include <algorithm>
@@ -160,5 +161,91 @@ void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, cons
             break;
         }
     }
+}
+
+void WriteEntry(const std::string& filename, const std::vector<uint8_t>& file_buffer,
+                std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer, CompressionType compression)
+{
+    if (filename.empty()) {
+        throw std::invalid_argument("filename string can not be empty!");
+    }
+
+    if (file_buffer.empty()) {
+        throw std::invalid_argument("input file buffer can not be empty!");
+    }
+
+    if (!out_tab_buffer || !out_arc_buffer) {
+        throw std::invalid_argument("pointers to output tab/arc buffers can not be nullptr!");
+    }
+
+    byte_vector_writer buf(out_tab_buffer);
+
+    if (out_tab_buffer->empty()) {
+        // write tab header
+        TabHeader header;
+        buf.write((char*)&header, sizeof(TabHeader));
+
+        // write compressed blocks
+        // @TODO: figure this out!
+        uint32_t           compressed_block_count = 2;
+        TabCompressedBlock compressed_block{0xFFFFFFFF, 0xFFFFFFFF};
+        buf.write((char*)&compressed_block_count, sizeof(uint32_t));
+        buf.write((char*)&compressed_block, sizeof(TabCompressedBlock), compressed_block_count);
+    }
+
+    TabEntry entry{};
+    entry.m_NameHash             = hashlittle(filename.c_str());
+    entry.m_Offset               = static_cast<uint32_t>(out_arc_buffer->size());
+    entry.m_Size                 = static_cast<uint32_t>(file_buffer.size());
+    entry.m_UncompressedSize     = entry.m_Size;
+    entry.m_CompressedBlockIndex = 0;
+    entry.m_CompressionType      = compression;
+    entry.m_Flags                = 0; // @TODO: figure out why this flag is sometimes 1.
+
+    switch (compression) {
+        case CompressionType::CompressionType_None: {
+            std::copy(file_buffer.begin(), file_buffer.end(), std::back_inserter(*out_arc_buffer));
+            break;
+        }
+
+        case CompressionType::CompressionType_Zlib: {
+#ifdef _DEBUG
+            __debugbreak();
+#endif
+            throw std::runtime_error("Zlib Crompression not implemented!");
+            break;
+        }
+
+        case CompressionType::CompressionType_Oodle: {
+            // entry is not using compression blocks
+            if (entry.m_CompressedBlockIndex == 0) {
+                std::vector<uint8_t> compressed_data;
+                const int64_t        size = ava::Oodle::Compress(&file_buffer, &compressed_data);
+
+                // update entry file size
+                entry.m_Size = static_cast<uint32_t>(size);
+
+                if (size == 0) {
+#ifdef _DEBUG
+                    __debugbreak();
+#endif
+                    throw std::runtime_error("CompressionType_Oodle: Failed to compress the buffer.");
+                }
+
+                // write the compressed buffer to the arc buffer
+                std::copy(compressed_data.begin(), compressed_data.end(), std::back_inserter(*out_arc_buffer));
+            } else {
+#ifdef _DEBUG
+                __debugbreak();
+#endif
+                throw std::runtime_error("CompressionType_Oodle: Compression blocks not implemented!");
+            }
+
+            break;
+        }
+    }
+
+    // write the tab entry
+    buf.write((char*)&entry, sizeof(TabEntry));
 }
 }; // namespace ava::ArchiveTable

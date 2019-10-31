@@ -61,6 +61,35 @@ TEST_CASE("Archive Table Format", "[AvaFormatLib][TAB]")
     }
 
     // @TODO: ReadEntryBufferFromArchive
+
+#if 0
+    SECTION("can write entries")
+    {
+        FileBuffer weapons_buffer, cow_buffer;
+        ReadTestFile("weapons.aisystunec", &weapons_buffer);
+        ReadTestFile("cow.modelc", &cow_buffer);
+
+        ava::Oodle::LoadLib("D:/Steam/steamapps/common/Just Cause 4/oo2core_7_win64.dll");
+
+        FileBuffer tab_buffer, arc_buffer;
+        WriteEntry("tuning/weapons.aisystunec", weapons_buffer, &tab_buffer, &arc_buffer);
+        WriteEntry("models/cow.modelc", cow_buffer, &tab_buffer, &arc_buffer, CompressionType_Oodle);
+
+#if 0
+        {
+            std::ofstream tab_stream("c:/users/aaron/desktop/test1.tab", std::ios::binary);
+            std::ofstream arc_stream("c:/users/aaron/desktop/test1.arc", std::ios::binary);
+
+            tab_stream.write((char*)tab_buffer.data(), tab_buffer.size());
+            arc_stream.write((char*)arc_buffer.data(), arc_buffer.size());
+        }
+
+        __debugbreak();
+#endif
+
+        ava::Oodle::UnloadLib();
+    }
+#endif
 }
 
 #if 0
@@ -72,8 +101,6 @@ TEST_CASE("Oodle decompression")
     ReadTestFile("game25.tab", &tab_buf);
     ReadTestFile("game25.arc", &arc_buf);
 
-    // game25 not working???
-
     // load oodle
     ava::Oodle::LoadLib("D:/Steam/steamapps/common/Just Cause 4/oo2core_7_win64.dll");
 
@@ -82,7 +109,7 @@ TEST_CASE("Oodle decompression")
     REQUIRE_NOTHROW(ReadTab(tab_buf, &entries, &blocks));
 
     FileBuffer out_file_buf;
-    REQUIRE_NOTHROW(ReadEntryBufferFromArchive(arc_buf, entries.at(0), &blocks, &out_file_buf));
+    REQUIRE_NOTHROW(ReadEntryBufferFromArchive(arc_buf, entries.at(20), &blocks, &out_file_buf));
 
     __debugbreak();
 

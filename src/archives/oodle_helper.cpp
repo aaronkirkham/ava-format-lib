@@ -54,7 +54,7 @@ int64_t Compress(const std::vector<uint8_t>* data, std::vector<uint8_t>* out_dat
     out_data->resize(bound);
 
     const int64_t result = Compress(data->data(), data->size(), out_data->data());
-    // out_data->resize(result);
+    out_data->resize(result);
     return result;
 }
 
