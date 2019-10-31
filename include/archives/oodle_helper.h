@@ -47,11 +47,13 @@ using OodleLZ_Decompress_t = int64_t (*)(const void* input, int64_t input_size, 
                                          int32_t, int64_t, int64_t, void*, void*, void*, void*, void* unk,
                                          int64_t unk_size, int64_t);
 
-static void*                oo2core_7_win64    = nullptr;
+static bool                 we_looded_oodle    = false;
+static void*                oodle_handle       = nullptr;
 static OodleLZ_Compress_t   OodleLZ_Compress   = nullptr;
 static OodleLZ_Decompress_t OodleLZ_Decompress = nullptr;
 
 void LoadLib(const std::filesystem::path& oodle_dll_path);
+void LoadLib(void* handle);
 void UnloadLib();
 
 static int64_t GetCompressedBufferSizeNeeded(int64_t size)
