@@ -2,10 +2,11 @@
 
 #include <Windows.h>
 #include <assert.h>
+#include <filesystem>
 
 namespace ava::Oodle
 {
-void LoadLib(const std::filesystem::path& oodle_dll_path)
+void LoadLib(const char* oodle_dll_path)
 {
     if (oodle_handle) {
         return;
@@ -15,7 +16,7 @@ void LoadLib(const std::filesystem::path& oodle_dll_path)
         throw std::invalid_argument("The Oodle DLL path specified does not exist.");
     }
 
-    auto handle = LoadLibrary(oodle_dll_path.string().c_str());
+    auto handle = LoadLibrary(oodle_dll_path);
     if (!handle) {
         throw std::runtime_error("Failed to load Oodle DLL.");
     }

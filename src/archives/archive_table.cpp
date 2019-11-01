@@ -44,7 +44,7 @@ void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entr
     }
 
     // read entries
-    while (static_cast<int32_t>(stream.tellg()) + 20 <= buffer.size()) {
+    while (static_cast<int32_t>(stream.tellg()) + sizeof(TabEntry) <= buffer.size()) {
         TabEntry entry;
         stream.read((char*)&entry, sizeof(TabEntry));
         out_entries->emplace_back(std::move(entry));
@@ -187,10 +187,10 @@ void WriteEntry(const std::string& filename, const std::vector<uint8_t>& file_bu
 
         // write compressed blocks
         // @TODO: figure this out!
-        uint32_t           compressed_block_count = 2;
-        TabCompressedBlock compressed_block{0xFFFFFFFF, 0xFFFFFFFF};
+        uint32_t compressed_block_count = 0;
+        // TabCompressedBlock compressed_block{0xFFFFFFFF, 0xFFFFFFFF};
         buf.write((char*)&compressed_block_count, sizeof(uint32_t));
-        buf.write((char*)&compressed_block, sizeof(TabCompressedBlock), compressed_block_count);
+        // buf.write((char*)&compressed_block, sizeof(TabCompressedBlock), compressed_block_count);
     }
 
     TabEntry entry{};

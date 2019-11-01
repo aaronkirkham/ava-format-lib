@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <filesystem>
 #include <vector>
 
 namespace ava::Oodle
@@ -52,7 +51,7 @@ static void*                oodle_handle       = nullptr;
 static OodleLZ_Compress_t   OodleLZ_Compress   = nullptr;
 static OodleLZ_Decompress_t OodleLZ_Decompress = nullptr;
 
-void LoadLib(const std::filesystem::path& oodle_dll_path);
+void LoadLib(const char* oodle_dll_path);
 void LoadLib(void* handle);
 void UnloadLib();
 
