@@ -7,10 +7,15 @@ namespace ava::ArchiveTable
 {
 static constexpr uint32_t TAB_MAGIC = 0x424154; // "TAB"
 
-enum CompressionType : uint8_t {
-    CompressionType_None  = 0,
-    CompressionType_Zlib  = 1,
-    CompressionType_Oodle = 4,
+enum ECompressLibrary : uint8_t {
+    E_COMPRESS_LIBRARY_NONE  = 0x0,
+    E_COMPRESS_LIBRARY_ZLIB  = 0x1,
+    E_COMPRESS_LIBRARY_OODLE = 0x4,
+};
+
+enum EEntryFlags {
+    E_ENTRY_FLAG_DECODE_NONE   = 0x0,
+    E_ENTRY_FLAG_DECODE_BUFFER = 0x1,
 };
 
 #pragma pack(push, 1)
@@ -25,13 +30,13 @@ struct TabHeader {
 };
 
 struct TabEntry {
-    uint32_t        m_NameHash;
-    uint32_t        m_Offset;
-    uint32_t        m_Size;
-    uint32_t        m_UncompressedSize;
-    uint16_t        m_CompressedBlockIndex;
-    CompressionType m_CompressionType;
-    uint8_t         m_Flags;
+    uint32_t         m_NameHash;
+    uint32_t         m_Offset;
+    uint32_t         m_Size;
+    uint32_t         m_UncompressedSize;
+    uint16_t         m_CompressedBlockIndex;
+    ECompressLibrary m_Library;
+    uint8_t          m_Flags;
 };
 
 struct TabCompressedBlock {
@@ -53,5 +58,5 @@ void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, cons
 
 void WriteEntry(const std::string& filename, const std::vector<uint8_t>& file_buffer,
                 std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer,
-                CompressionType compression = CompressionType_None);
+                ECompressLibrary compression = E_COMPRESS_LIBRARY_NONE);
 }; // namespace ava::ArchiveTable

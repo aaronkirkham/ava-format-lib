@@ -17,7 +17,7 @@ RuntimeContainer::RuntimeContainer(const std::vector<uint8_t>& buffer)
     std::istream      stream(&buf);
 
     // read header
-    RtpcHeader header;
+    RtpcHeader header{};
     stream.read((char*)&header, sizeof(RtpcHeader));
     if (header.m_Magic != RTPC_MAGIC) {
         throw std::runtime_error("Invalid RTPC header magic!");
@@ -36,8 +36,8 @@ void RuntimeContainer::GetContainer(const uint32_t key)
 {
     //
     uintptr_t ptr;
-    if (m_Container && m_Container->m_ContainerCount) {
-        ptr = (0x0 + 3 + (m_Container->m_VariantCount * sizeof(RtpcContainerVariant)) + m_Container->m_DataOffset);
+    if (m_Container && m_Container->m_NumContainers) {
+        ptr = (0x0 + 3 + (m_Container->m_NumVariants * sizeof(RtpcContainerVariant)) + m_Container->m_DataOffset);
     }
 }
 

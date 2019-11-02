@@ -47,18 +47,18 @@ ADF::ADF(const std::vector<uint8_t>& buffer)
     }
 
     // add built in primitive types
-    AddBuiltInType(EAdfType::SCALAR, ScalarType::UNSIGNED, sizeof(uint8_t), "uint8");
-    AddBuiltInType(EAdfType::SCALAR, ScalarType::SIGNED, sizeof(int8_t), "int8");
-    AddBuiltInType(EAdfType::SCALAR, ScalarType::UNSIGNED, sizeof(uint16_t), "uint16");
-    AddBuiltInType(EAdfType::SCALAR, ScalarType::SIGNED, sizeof(int16_t), "int16");
-    AddBuiltInType(EAdfType::SCALAR, ScalarType::UNSIGNED, sizeof(uint32_t), "uint32");
-    AddBuiltInType(EAdfType::SCALAR, ScalarType::SIGNED, sizeof(int32_t), "int32");
-    AddBuiltInType(EAdfType::SCALAR, ScalarType::UNSIGNED, sizeof(uint64_t), "uint64");
-    AddBuiltInType(EAdfType::SCALAR, ScalarType::SIGNED, sizeof(int64_t), "int64");
-    AddBuiltInType(EAdfType::SCALAR, ScalarType::FLOAT, sizeof(float), "float");
-    AddBuiltInType(EAdfType::SCALAR, ScalarType::FLOAT, sizeof(double), "double");
-    AddBuiltInType(EAdfType::STRING, ScalarType::SIGNED, 8, "String", 0);
-    AddBuiltInType(EAdfType::DEFERRED, ScalarType::SIGNED, 16, "void", 0);
+    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_UNSIGNED, sizeof(uint8_t), "uint8");
+    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_SIGNED, sizeof(int8_t), "int8");
+    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_UNSIGNED, sizeof(uint16_t), "uint16");
+    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_SIGNED, sizeof(int16_t), "int16");
+    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_UNSIGNED, sizeof(uint32_t), "uint32");
+    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_SIGNED, sizeof(int32_t), "int32");
+    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_UNSIGNED, sizeof(uint64_t), "uint64");
+    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_SIGNED, sizeof(int64_t), "int64");
+    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_FLOAT, sizeof(float), "float");
+    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_FLOAT, sizeof(double), "double");
+    AddBuiltInType(ADF_TYPE_STRING, ADF_SCALARTYPE_SIGNED, 8, "String", 0);
+    AddBuiltInType(ADF_TYPE_DEFERRED, ADF_SCALARTYPE_SIGNED, 16, "void", 0);
 
     // add internal types from this buffer
     AddTypes(buffer);
@@ -71,7 +71,7 @@ ADF::~ADF()
     }
 }
 
-void ADF::AddBuiltInType(EAdfType type, ScalarType scalar_type, uint32_t size, const char* name, uint16_t flags)
+void ADF::AddBuiltInType(EAdfType type, EAdfScalarType scalar_type, uint32_t size, const char* name, uint16_t flags)
 {
     char type_name[64];
     snprintf(type_name, sizeof(type_name), "%s%u%u%u", name, (uint32_t)type, size, size);
@@ -79,7 +79,7 @@ void ADF::AddBuiltInType(EAdfType type, ScalarType scalar_type, uint32_t size, c
     uint32_t type_hash = hashlittle(type_name);
     uint32_t alignment = size;
 
-    if (type == EAdfType::DEFERRED) {
+    if (type == ADF_TYPE_DEFERRED) {
         type_hash = 0xDEFE88ED;
         alignment = 8;
     }
@@ -114,12 +114,12 @@ AdfType* ADF::FindType(const uint32_t type_hash)
 void ADF::LoadInlineOffsets(const AdfType* type, char* payload, const uint32_t offset)
 {
     static auto DoesTypeNeedLoading = [](const EAdfType type) {
-        return (type == EAdfType::STRUCTURE || type == EAdfType::POINTER || type == EAdfType::ARRAY
-                || type == EAdfType::DEFERRED || type == EAdfType::STRING);
+        return (type == ADF_TYPE_STRUCT || type == ADF_TYPE_POINTER || type == ADF_TYPE_ARRAY
+                || type == ADF_TYPE_DEFERRED || type == ADF_TYPE_STRING);
     };
 
     switch (type->m_Type) {
-        case EAdfType::STRUCTURE: {
+        case ADF_TYPE_STRUCT: {
             uint32_t member_offset = 0;
             for (uint32_t i = 0; i < type->m_MemberCount; ++i) {
                 const AdfMember& member      = type->m_Members[i];
@@ -138,14 +138,14 @@ void ADF::LoadInlineOffsets(const AdfType* type, char* payload, const uint32_t o
             break;
         }
 
-        case EAdfType::POINTER:
-        case EAdfType::DEFERRED: {
+        case ADF_TYPE_POINTER:
+        case ADF_TYPE_DEFERRED: {
             const uint32_t real_offset = *(uint32_t*)&payload[offset];
             if (real_offset) {
                 *(uint64_t*)&payload[offset] = (uint64_t)((char*)payload + real_offset);
 
                 const uint32_t type_hash =
-                    (type->m_Type == EAdfType::POINTER ? type->m_SubTypeHash : *(uint32_t*)&payload[offset + 8]);
+                    (type->m_Type == ADF_TYPE_POINTER ? type->m_SubTypeHash : *(uint32_t*)&payload[offset + 8]);
                 const AdfType* ptr_type = FindType(type_hash);
                 if (ptr_type) {
                     LoadInlineOffsets(ptr_type, payload, real_offset);
@@ -155,7 +155,7 @@ void ADF::LoadInlineOffsets(const AdfType* type, char* payload, const uint32_t o
             break;
         }
 
-        case EAdfType::ARRAY: {
+        case ADF_TYPE_ARRAY: {
             const uint32_t real_offset = *(uint32_t*)&payload[offset];
             if (real_offset) {
                 *(uint64_t*)&payload[offset] = (uint64_t)((char*)payload + real_offset);
@@ -172,7 +172,7 @@ void ADF::LoadInlineOffsets(const AdfType* type, char* payload, const uint32_t o
             break;
         }
 
-        case EAdfType::STRING: {
+        case ADF_TYPE_STRING: {
             const uint32_t real_offset = *(uint32_t*)&payload[offset];
             if (real_offset) {
                 *(uint64_t*)&payload[offset] = (uint64_t)((char*)payload + real_offset);
@@ -241,7 +241,7 @@ void ADF::AddTypes(const std::vector<uint8_t>& buffer)
         type->m_Name = GetStringIndex(GetString(type->m_Name, &header, buffer));
 
         // reindex all member type names
-        const bool is_enum = (type->m_Type == EAdfType::ENUM);
+        const bool is_enum = (type->m_Type == ADF_TYPE_ENUM);
         for (uint32_t x = 0; x < type->m_MemberCount; ++x) {
             const void*    member            = (is_enum ? (void*)&type->Enum(x) : (void*)&type->m_Members[x]);
             const uint64_t member_name_index = *(uint64_t*)member;
@@ -318,7 +318,7 @@ void ADF::ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instan
     auto mem = std::malloc(current_instance->m_PayloadSize);
     std::memcpy(mem, payload, current_instance->m_PayloadSize);
 
-    bool has_32bit_inline_arrays = ~LOBYTE(m_Header->m_Flags) & EHeaderFlags::RELATIVE_OFFSETS_EXISTS;
+    bool has_32bit_inline_arrays = ~LOBYTE(m_Header->m_Flags) & E_ADF_HEADER_FLAG_RELATIVE_OFFSETS_EXISTS;
     if (has_32bit_inline_arrays) {
         LoadInlineOffsets(type, (char*)mem);
     } else {

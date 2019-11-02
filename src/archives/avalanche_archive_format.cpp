@@ -30,16 +30,15 @@ void Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buff
     const bool     has_multiple_chunks = (num_chunks > 1);
 
     AafHeader header;
-    header.m_TotalUncompressedSize  = buffer_size;
-    header.m_UncompressedBufferSize = (has_multiple_chunks ? AAF_MAX_CHUNK_DATA_SIZE : buffer_size);
-    header.m_ChunkCount             = num_chunks;
+    header.m_TotalUnpackedSize        = buffer_size;
+    header.m_RequiredUnpackBufferSize = (has_multiple_chunks ? AAF_MAX_CHUNK_DATA_SIZE : buffer_size);
+    header.m_NumChunks                = num_chunks;
 
     byte_vector_writer buf(out_buffer);
     buf.write(&header, sizeof(AafHeader));
 
     // create the chunks
-    std::vector<AafChunk> chunks;
-    uint32_t              last_chunk_offset = 0;
+    uint32_t last_chunk_offset = 0;
     for (uint32_t i = 0; i < num_chunks; ++i) {
         AafChunk             chunk;
         std::vector<uint8_t> chunk_data;
@@ -52,18 +51,18 @@ void Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buff
                 (block_size > AAF_MAX_CHUNK_DATA_SIZE ? (AAF_MAX_CHUNK_DATA_SIZE % block_size) : block_size);
 
             // copy the current chunk data
-            chunk.m_UncompressedSize = chunk_size;
+            chunk.m_DecompressedSize = chunk_size;
             chunk_data               = std::vector<uint8_t>(buffer.begin() + last_chunk_offset,
                                               buffer.begin() + last_chunk_offset + chunk_size);
             last_chunk_offset += chunk_size;
         }
         // we only have a single chunk, the chunk will contain the whole buffer
         else {
-            chunk.m_UncompressedSize = buffer_size;
+            chunk.m_DecompressedSize = buffer_size;
         }
 
         // compress the current chunk data
-        uLong                decompressed_size = static_cast<uLong>(chunk.m_UncompressedSize);
+        uLong                decompressed_size = static_cast<uLong>(chunk.m_DecompressedSize);
         uLong                compressed_size   = compressBound(decompressed_size);
         std::vector<uint8_t> compressed_block(compressed_size);
 
@@ -76,19 +75,19 @@ void Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buff
             throw std::runtime_error("Failed to compress an AAF chunk!");
         }
 
-        // NOTE: we remove 6 bytes as zlib will automatically write 2 bytes at the front (CMF & FLG) and 4 bytes at the
-        // back (ADLER32) of our compressed buffer, which we do not want.
-        chunk.m_CompressedSize = (compressed_size - 6);
+        // update the chunk compressed size
+        // @NOTE: final size should not include zlib header & checksum
+        chunk.m_CompressedSize = (compressed_size - (ZLIB_HEADER_SIZE + ZLIB_CHECKSUM_SIZE));
 
         // calculate the padding and data size
         const uint32_t padding =
             ava::math::align_distance((buf.tellp() + sizeof(AafChunk) + chunk.m_CompressedSize), 16);
-        chunk.m_DataSize = (sizeof(AafChunk) + chunk.m_CompressedSize + padding);
+        chunk.m_ChunkSize = (sizeof(AafChunk) + chunk.m_CompressedSize + padding);
 
         // write chunk and compressed data
-        // @NOTE: +2 to skip CMF & FLG
+        // @NOTE: must skip ZLIB header
         buf.write((char*)&chunk, sizeof(AafChunk));
-        buf.write(compressed_block.data() + 2, chunk.m_CompressedSize);
+        buf.write(compressed_block.data() + ZLIB_HEADER_SIZE, chunk.m_CompressedSize);
 
         // write block padding
         buf.write((char*)&AAF_PADDING_BYTE, 1, padding);
@@ -115,16 +114,16 @@ void Decompress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_bu
     std::istream      stream(&buf);
 
     // read header
-    AafHeader header;
+    AafHeader header{};
     stream.read((char*)&header, sizeof(AafHeader));
     if (header.m_Magic != AAF_MAGIC) {
         throw std::runtime_error("Invalid AAF header magic!");
     }
 
-    out_buffer->reserve(header.m_TotalUncompressedSize);
+    out_buffer->reserve(header.m_TotalUnpackedSize);
 
     // read all the chunks
-    for (uint32_t i = 0; i < header.m_ChunkCount; ++i) {
+    for (uint32_t i = 0; i < header.m_NumChunks; ++i) {
         const auto start_pos = stream.tellg();
 
         AafChunk chunk;
@@ -139,12 +138,12 @@ void Decompress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_bu
 
         // decompress the chunk
         auto                 compressed_size   = static_cast<uLong>(chunk.m_CompressedSize);
-        auto                 decompressed_size = static_cast<uLong>(chunk.m_UncompressedSize);
+        auto                 decompressed_size = static_cast<uLong>(chunk.m_DecompressedSize);
         std::vector<uint8_t> decompressed_chunk_data(decompressed_size);
 
         const auto result =
             uncompress(decompressed_chunk_data.data(), &decompressed_size, chunk_data.data(), compressed_size);
-        if (result != Z_OK || decompressed_size != chunk.m_UncompressedSize) {
+        if (result != Z_OK || decompressed_size != chunk.m_DecompressedSize) {
 #ifdef _DEBUG
             __debugbreak();
 #endif
@@ -152,7 +151,7 @@ void Decompress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_bu
         }
 
         out_buffer->insert(out_buffer->end(), decompressed_chunk_data.begin(), decompressed_chunk_data.end());
-        stream.seekg((uint64_t)start_pos + chunk.m_DataSize);
+        stream.seekg((uint64_t)start_pos + chunk.m_ChunkSize);
     }
 }
 }; // namespace ava::AvalancheArchiveFormat

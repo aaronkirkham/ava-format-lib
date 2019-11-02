@@ -25,7 +25,7 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
     std::istream      stream(&buf);
 
     // read header
-    AvtxHeader header;
+    AvtxHeader header{};
     stream.read((char*)&header, sizeof(AvtxHeader));
     if (header.m_Magic != AVTX_MAGIC) {
         throw std::runtime_error("Invalid AVTX header magic!");
@@ -52,7 +52,7 @@ uint8_t FindBestStream(const AvtxHeader& header, bool only_source)
             continue;
         }
 
-        if ((stream.m_IsSource == only_source) || (!stream.m_IsSource && stream.m_Size > biggest)) {
+        if ((stream.m_Source == only_source) || (!stream.m_Source && stream.m_Size > biggest)) {
             biggest      = stream.m_Size;
             stream_index = i;
         }

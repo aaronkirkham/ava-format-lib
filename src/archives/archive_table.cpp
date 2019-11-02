@@ -83,8 +83,8 @@ void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, cons
     }
 
     // read the entry buffer from the input buffer
-    switch (entry.m_CompressionType) {
-        case CompressionType::CompressionType_None: {
+    switch (entry.m_Library) {
+        case E_COMPRESS_LIBRARY_NONE: {
             assert(entry.m_Size != 0);
             out_buffer->resize(entry.m_Size);
 
@@ -93,7 +93,7 @@ void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, cons
             break;
         }
 
-        case CompressionType::CompressionType_Zlib: {
+        case E_COMPRESS_LIBRARY_ZLIB: {
 #ifdef _DEBUG
             __debugbreak();
 #endif
@@ -101,7 +101,7 @@ void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, cons
             break;
         }
 
-        case CompressionType::CompressionType_Oodle: {
+        case E_COMPRESS_LIBRARY_OODLE: {
             // entry is not using compression blocks
             if (entry.m_CompressedBlockIndex == 0) {
                 // copy the compressed buffer from the arc input buffer
@@ -148,7 +148,7 @@ void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, cons
                         __debugbreak();
 #endif
                         out_buffer->clear();
-                        throw std::runtime_error("CompressionType_Oodle: Failed to decompressed block buffer");
+                        throw std::runtime_error("CompressionType_Oodle: Failed to decompress block buffer");
                     }
 
                     total_compressed_size -= block.m_CompressedSize;
@@ -164,7 +164,8 @@ void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, cons
 }
 
 void WriteEntry(const std::string& filename, const std::vector<uint8_t>& file_buffer,
-                std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer, CompressionType compression)
+                std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer,
+                ECompressLibrary compression)
 {
     if (filename.empty()) {
         throw std::invalid_argument("filename string can not be empty!");
@@ -199,16 +200,16 @@ void WriteEntry(const std::string& filename, const std::vector<uint8_t>& file_bu
     entry.m_Size                 = static_cast<uint32_t>(file_buffer.size());
     entry.m_UncompressedSize     = entry.m_Size;
     entry.m_CompressedBlockIndex = 0;
-    entry.m_CompressionType      = compression;
-    entry.m_Flags                = 0; // @TODO: figure out why this flag is sometimes 1.
+    entry.m_Library              = compression;
+    entry.m_Flags                = E_ENTRY_FLAG_DECODE_NONE;
 
     switch (compression) {
-        case CompressionType::CompressionType_None: {
+        case E_COMPRESS_LIBRARY_NONE: {
             std::copy(file_buffer.begin(), file_buffer.end(), std::back_inserter(*out_arc_buffer));
             break;
         }
 
-        case CompressionType::CompressionType_Zlib: {
+        case E_COMPRESS_LIBRARY_ZLIB: {
 #ifdef _DEBUG
             __debugbreak();
 #endif
@@ -216,14 +217,15 @@ void WriteEntry(const std::string& filename, const std::vector<uint8_t>& file_bu
             break;
         }
 
-        case CompressionType::CompressionType_Oodle: {
+        case E_COMPRESS_LIBRARY_OODLE: {
             // entry is not using compression blocks
             if (entry.m_CompressedBlockIndex == 0) {
                 std::vector<uint8_t> compressed_data;
                 const int64_t        size = ava::Oodle::Compress(&file_buffer, &compressed_data);
 
-                // update entry file size
-                entry.m_Size = static_cast<uint32_t>(size);
+                // update entry
+                entry.m_Size  = static_cast<uint32_t>(size);
+                entry.m_Flags = E_ENTRY_FLAG_DECODE_BUFFER;
 
                 if (size == 0) {
 #ifdef _DEBUG

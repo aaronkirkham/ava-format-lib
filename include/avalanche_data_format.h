@@ -8,29 +8,37 @@ namespace ava::AvalancheDataFormat
 {
 static constexpr uint32_t ADF_MAGIC = 0x41444620; // ADF
 
-enum class EAdfType : uint32_t {
-    SCALAR       = 0,
-    STRUCTURE    = 1,
-    POINTER      = 2,
-    ARRAY        = 3,
-    INLINE_ARRAY = 4,
-    STRING       = 5,
-    UNUSED       = 6,
-    BITFIELD     = 7,
-    ENUM         = 8,
-    STRING_HASH  = 9,
-    DEFERRED     = 10,
+enum EAdfType : uint32_t {
+    ADF_TYPE_SCALAR       = 0x0,
+    ADF_TYPE_STRUCT       = 0x1,
+    ADF_TYPE_POINTER      = 0x2,
+    ADF_TYPE_ARRAY        = 0x3,
+    ADF_TYPE_INLINE_ARRAY = 0x4,
+    ADF_TYPE_STRING       = 0x5,
+    ADF_TYPE_RECURSIVE    = 0x6,
+    ADF_TYPE_BITFIELD     = 0x7,
+    ADF_TYPE_ENUM         = 0x8,
+    ADF_TYPE_STRING_HASH  = 0x9,
+    ADF_TYPE_DEFERRED     = 0xA,
 };
 
-enum class ScalarType : uint16_t {
-    SIGNED   = 0,
-    UNSIGNED = 1,
-    FLOAT    = 2,
+enum EAdfScalarType : uint16_t {
+    ADF_SCALARTYPE_SIGNED   = 0x0,
+    ADF_SCALARTYPE_UNSIGNED = 0x1,
+    ADF_SCALARTYPE_FLOAT    = 0x2,
 };
 
-enum EHeaderFlags {
-    RELATIVE_OFFSETS_EXISTS        = (1 << 0),
-    HAS_INLINE_ARRAY_WITH_POINTERS = (1 << 1),
+enum EAdfHeaderFlags {
+    E_ADF_HEADER_FLAG_RELATIVE_OFFSETS_EXISTS             = 0x1,
+    E_ADF_HEADER_FLAG_CONTAINS_INLINE_ARRAY_WITH_POINTERS = 0x2,
+};
+
+enum EAdfTypeFlags {
+    E_ADF_TYPE_FLAGS_DEFAULT         = 0x0,
+    E_ADF_TYPE_FLAG_SIMPLE_POD_READ  = 0x1,
+    E_ADF_TYPE_FLAG_SIMPLE_POD_WRITE = 0x2,
+    E_ADF_TYPE_FLAG_NO_STRING_HASHES = 0x4,
+    E_ADF_TYPE_FLAG_IS_FINALIZED     = 0x8000,
 };
 
 #pragma pack(push, 8)
@@ -61,7 +69,7 @@ struct AdfHeader {
     uint32_t m_StringCount;
     uint32_t m_FirstStringDataOffset;
     uint32_t m_FileSize;
-    uint32_t unknown;
+    uint32_t m_MetaDataOffset;
     uint32_t m_Flags;
     uint32_t m_IncludedLibraries;
     uint32_t : 32;
@@ -97,17 +105,17 @@ struct AdfEnum {
 #pragma warning(disable : 4200)
 
 struct AdfType {
-    EAdfType   m_Type;
-    uint32_t   m_Size;
-    uint32_t   m_Align;
-    uint32_t   m_TypeHash;
-    uint64_t   m_Name;
-    uint16_t   m_Flags;
-    ScalarType m_ScalarType;
-    uint32_t   m_SubTypeHash;
-    uint32_t   m_ArraySizeOrBitCount;
-    uint32_t   m_MemberCount;
-    AdfMember  m_Members[0];
+    EAdfType       m_Type;
+    uint32_t       m_Size;
+    uint32_t       m_Align;
+    uint32_t       m_TypeHash;
+    uint64_t       m_Name;
+    uint16_t       m_Flags;
+    EAdfScalarType m_ScalarType;
+    uint32_t       m_SubTypeHash;
+    uint32_t       m_ArraySizeOrBitCount;
+    uint32_t       m_MemberCount;
+    AdfMember      m_Members[0];
 
     AdfEnum& Enum(uint32_t i)
     {
@@ -121,7 +129,7 @@ struct AdfType {
 
     const size_t DataSize() const
     {
-        return (sizeof(AdfType) + ((m_Type != EAdfType::ENUM ? sizeof(AdfMember) : sizeof(AdfEnum)) * m_MemberCount));
+        return (sizeof(AdfType) + ((m_Type != ADF_TYPE_ENUM ? sizeof(AdfMember) : sizeof(AdfEnum)) * m_MemberCount));
     }
 };
 
@@ -154,7 +162,7 @@ class ADF
     std::vector<std::string>        m_Strings;
     std::map<uint32_t, std::string> m_StringHashes;
 
-    void     AddBuiltInType(EAdfType type, ScalarType scalar_type, uint32_t size, const char* name, uint16_t flags = 3);
+    void AddBuiltInType(EAdfType type, EAdfScalarType scalar_type, uint32_t size, const char* name, uint16_t flags = 3);
     AdfType* FindType(const uint32_t type_hash);
     void     LoadInlineOffsets(const AdfType* type, char* payload, const uint32_t offset = 0);
 
