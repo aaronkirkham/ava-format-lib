@@ -21,7 +21,6 @@ project "AvaFormatLib"
   includedirs { "deps" }
   files { "src/**.cpp", "include/**.h" }
   files { "deps/zlib/*.c", "deps/zlib/*.h" }
-  -- disablewarnings { "4200", "4267", "4334" }
 
 project "UnitTests"
   kind "ConsoleApp"

@@ -23,11 +23,20 @@ class byte_vector_writer
 
     void write(const void* data, const size_t size, const size_t count)
     {
+        if (count == 0) {
+            return;
+        }
+
         buffer_alloc(size * count);
         for (size_t i = 0; i < count; ++i) {
             std::memcpy(buffer_->data() + (offset_ + (i * size)), data, size);
         }
         offset_ += (size * count);
+    }
+
+    void setp(const size_t pos)
+    {
+        offset_ = pos;
     }
 
     const size_t tellp() const

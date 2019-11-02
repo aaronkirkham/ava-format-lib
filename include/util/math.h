@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <string>
 
 namespace ava::math
 {
@@ -55,5 +56,25 @@ template <typename T> inline static uint32_t align_distance(T value, uint32_t al
     }
 
     return 0;
+}
+
+/**
+ * Return the length of an aligned string
+ *
+ * @param string string to check length of
+ * @param alignment size of the alignment
+ * @param out_padding total padding added to the string length
+ */
+static uint32_t aligned_string_len(const std::string& string, uint32_t alignment = sizeof(uint32_t),
+                                   uint32_t* out_padding = nullptr)
+{
+    const size_t   length  = string.length();
+    const uint32_t padding = align_distance(length, alignment);
+
+    if (out_padding) {
+        *out_padding = padding;
+    }
+
+    return static_cast<uint32_t>(length + padding);
 }
 }; // namespace ava::math

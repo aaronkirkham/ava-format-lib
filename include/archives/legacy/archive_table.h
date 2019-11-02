@@ -29,4 +29,7 @@ void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entr
 bool ReadTabEntry(const std::vector<uint8_t>& buffer, uint32_t name_hash, TabEntry* out_entry);
 void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, const TabEntry& entry,
                                 std::vector<uint8_t>* out_buffer);
+
+void WriteEntry(const std::string& filename, const std::vector<uint8_t>& file_buffer,
+                std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer);
 }; // namespace ava::legacy::ArchiveTable

@@ -1,5 +1,4 @@
 #define CATCH_CONFIG_MAIN
-#define CATCH_CONFIG_DEFAULT_REPORTER "compact"
 #include "catch.hpp"
 
 #include <AvaFormatLib.h>
@@ -38,108 +37,107 @@ template <typename T> std::size_t VectorFastHash(std::vector<T> const& vec)
     return seed;
 }
 
+bool FilesAreTheSame(const std::vector<uint8_t>& a, const std::vector<uint8_t>& b)
+{
+    return VectorFastHash(a) == VectorFastHash(b);
+}
+
 TEST_CASE("Archive Table Format", "[AvaFormatLib][TAB]")
 {
     using namespace ava::ArchiveTable;
 
-    FileBuffer buffer;
-    ReadTestFile("game5.tab", &buffer);
+    FileBuffer tab_buffer, arc_buffer;
+    ReadTestFile("test0.tab", &tab_buffer);
+    ReadTestFile("test0.arc", &arc_buffer);
+
+    FileBuffer hello_buffer, world_buffer;
+    ReadTestFile("hello.bin", &hello_buffer);
+    ReadTestFile("world.bin", &world_buffer);
+
+    ava::Oodle::LoadLib("D:/Steam/steamapps/common/Just Cause 4/oo2core_7_win64.dll");
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
         std::vector<TabEntry> entries;
         REQUIRE_THROWS_AS(ReadTab({}, &entries), std::invalid_argument);
-        REQUIRE_THROWS_AS(ReadTab(buffer, nullptr), std::invalid_argument);
+        REQUIRE_THROWS_AS(ReadTab(tab_buffer, nullptr), std::invalid_argument);
     }
 
     SECTION("file was parsed and entries vector has results")
     {
         std::vector<TabEntry> entries;
-        REQUIRE_NOTHROW(ReadTab(buffer, &entries));
+        REQUIRE_NOTHROW(ReadTab(tab_buffer, &entries));
         REQUIRE_FALSE(entries.empty());
-        REQUIRE(entries[0].m_NameHash == 0xbeea6bb0);
+        REQUIRE(entries[0].m_NameHash == hashlittle("hello.bin"));
     }
 
-    // @TODO: ReadEntryBufferFromArchive
+    SECTION("can read entries")
+    {
+        TabEntry entry{};
+        REQUIRE(ReadTabEntry(tab_buffer, hashlittle("world.bin"), &entry));
 
-#if 0
+        std::vector<uint8_t> file_buffer;
+        REQUIRE_NOTHROW(ReadEntryBufferFromArchive(arc_buffer, entry, nullptr, &file_buffer));
+        REQUIRE(FilesAreTheSame(file_buffer, world_buffer));
+    }
+
     SECTION("can write entries")
     {
-        FileBuffer weapons_buffer, cow_buffer;
-        ReadTestFile("weapons.aisystunec", &weapons_buffer);
-        ReadTestFile("cow.modelc", &cow_buffer);
-
-        ava::Oodle::LoadLib("D:/Steam/steamapps/common/Just Cause 4/oo2core_7_win64.dll");
-
-        FileBuffer tab_buffer, arc_buffer;
-        WriteEntry("tuning/weapons.aisystunec", weapons_buffer, &tab_buffer, &arc_buffer);
-        WriteEntry("models/cow.modelc", cow_buffer, &tab_buffer, &arc_buffer, CompressionType_Oodle);
-
-#if 0
-        {
-            std::ofstream tab_stream("c:/users/aaron/desktop/test1.tab", std::ios::binary);
-            std::ofstream arc_stream("c:/users/aaron/desktop/test1.arc", std::ios::binary);
-
-            tab_stream.write((char*)tab_buffer.data(), tab_buffer.size());
-            arc_stream.write((char*)arc_buffer.data(), arc_buffer.size());
-        }
-
-        __debugbreak();
-#endif
-
-        ava::Oodle::UnloadLib();
+        FileBuffer t_buffer, a_buffer;
+        REQUIRE_NOTHROW(WriteEntry("hello.bin", hello_buffer, &t_buffer, &a_buffer));
+        REQUIRE_NOTHROW(WriteEntry("world.bin", world_buffer, &t_buffer, &a_buffer, E_COMPRESS_LIBRARY_OODLE));
+        REQUIRE(FilesAreTheSame(t_buffer, tab_buffer));
+        REQUIRE(FilesAreTheSame(a_buffer, arc_buffer));
     }
-#endif
-}
-
-#if 0
-TEST_CASE("Oodle decompression")
-{
-    using namespace ava::ArchiveTable;
-
-    FileBuffer tab_buf, arc_buf;
-    ReadTestFile("game25.tab", &tab_buf);
-    ReadTestFile("game25.arc", &arc_buf);
-
-    // load oodle
-    ava::Oodle::LoadLib("D:/Steam/steamapps/common/Just Cause 4/oo2core_7_win64.dll");
-
-    std::vector<TabEntry>           entries;
-    std::vector<TabCompressedBlock> blocks;
-    REQUIRE_NOTHROW(ReadTab(tab_buf, &entries, &blocks));
-
-    FileBuffer out_file_buf;
-    REQUIRE_NOTHROW(ReadEntryBufferFromArchive(arc_buf, entries.at(20), &blocks, &out_file_buf));
-
-    __debugbreak();
 
     ava::Oodle::UnloadLib();
 }
-#endif
 
 TEST_CASE("Archive Table Format (LEGACY)", "[AvaFormatLib][TAB]")
 {
     using namespace ava::legacy::ArchiveTable;
 
-    FileBuffer buffer;
-    ReadTestFile("game67.tab", &buffer);
+    FileBuffer tab_buffer, arc_buffer;
+    ReadTestFile("test0_legacy.tab", &tab_buffer);
+    ReadTestFile("test0_legacy.arc", &arc_buffer);
+
+    FileBuffer hello_buffer, world_buffer;
+    ReadTestFile("hello.bin", &hello_buffer);
+    ReadTestFile("world.bin", &world_buffer);
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
         std::vector<TabEntry> entries;
         REQUIRE_THROWS_AS(ReadTab({}, &entries), std::invalid_argument);
-        REQUIRE_THROWS_AS(ReadTab(buffer, nullptr), std::invalid_argument);
+        REQUIRE_THROWS_AS(ReadTab(tab_buffer, nullptr), std::invalid_argument);
     }
 
     SECTION("file was parsed and entries vector has results")
     {
         std::vector<TabEntry> entries;
-        REQUIRE_NOTHROW(ReadTab(buffer, &entries));
+        REQUIRE_NOTHROW(ReadTab(tab_buffer, &entries));
         REQUIRE_FALSE(entries.empty());
-        REQUIRE(entries[0].m_NameHash == 0x966db7bc);
+        REQUIRE(entries[0].m_NameHash == hashlittle("hello.bin"));
     }
 
-    // @TODO: ReadEntryBufferFromArchive
+    SECTION("can read entries")
+    {
+        TabEntry entry{};
+        REQUIRE(ReadTabEntry(tab_buffer, hashlittle("world.bin"), &entry));
+
+        std::vector<uint8_t> file_buffer;
+        REQUIRE_NOTHROW(ReadEntryBufferFromArchive(arc_buffer, entry, &file_buffer));
+        REQUIRE(FilesAreTheSame(file_buffer, world_buffer));
+    }
+
+    SECTION("can write entries")
+    {
+        FileBuffer t_buffer, a_buffer;
+        REQUIRE_NOTHROW(WriteEntry("hello.bin", hello_buffer, &t_buffer, &a_buffer));
+        REQUIRE_NOTHROW(WriteEntry("world.bin", world_buffer, &t_buffer, &a_buffer));
+        REQUIRE(FilesAreTheSame(t_buffer, tab_buffer));
+        REQUIRE(FilesAreTheSame(a_buffer, arc_buffer));
+    }
 }
 
 TEST_CASE("Avalanche Archive Format", "[AvaFormatLib][AAF]")
@@ -177,7 +175,7 @@ TEST_CASE("Avalanche Archive Format", "[AvaFormatLib][AAF]")
             FileBuffer recompressed_buffer;
             REQUIRE_NOTHROW(Compress(decompressed_buffer, &recompressed_buffer));
             REQUIRE(recompressed_buffer.size() == buffer.size());
-            REQUIRE(VectorFastHash(recompressed_buffer) == VectorFastHash(buffer));
+            REQUIRE(FilesAreTheSame(recompressed_buffer, buffer));
         }
     }
 }
@@ -186,23 +184,80 @@ TEST_CASE("Stream Archive", "[AvaFormatLib][SARC]")
 {
     using namespace ava::StreamArchive;
 
-    FileBuffer buffer;
-    ReadTestFile("paratrooper_drop.ee", &buffer);
-
     SECTION("invalid input argument throws std::invalid_argument")
     {
         std::vector<ArchiveEntry_t> entries;
         REQUIRE_THROWS_AS(Parse({}, &entries), std::invalid_argument);
-        REQUIRE_THROWS_AS(Parse(buffer, nullptr), std::invalid_argument);
+        REQUIRE_THROWS_AS(Parse({1}, nullptr), std::invalid_argument);
     }
 
-    SECTION("file was parsed and entries vector has results")
+    SECTION("v2")
     {
+        FileBuffer buffer;
+        ReadTestFile("wgst002_skin_flame.sarc", &buffer);
+
         std::vector<ArchiveEntry_t> entries;
         REQUIRE_NOTHROW(Parse(buffer, &entries));
-        REQUIRE(entries.size() == 3);
-        REQUIRE(entries[2].m_Filename
-                == "editor/entities/spawners/combatant_spawnrules/spawn_modules/paratrooper_drop.epe");
+
+        SECTION("file was parsed and entries vector has results")
+        {
+            REQUIRE_FALSE(entries.empty());
+            REQUIRE(entries.at(10).m_Filename == "models/jc_aero/wingsuit/wingsuit_dlc_body.lod");
+        }
+
+        SECTION("can read entries")
+        {
+            std::vector<uint8_t> out_buffer;
+            ReadEntry(buffer, entries, "editor/entities/dlc/wingsuit_skins/wgst002_skin_flame.epe", &out_buffer);
+            REQUIRE_FALSE(out_buffer.empty());
+            REQUIRE((out_buffer[0] == 'R' && out_buffer[1] == 'T' && out_buffer[2] == 'P' && out_buffer[3] == 'C'));
+        }
+
+        SECTION("can write entries")
+        {
+            FileBuffer world_buffer;
+            ReadTestFile("world.bin", &world_buffer);
+
+            REQUIRE_NOTHROW(WriteEntry(buffer, &entries, "world.bin", world_buffer));
+            REQUIRE(entries.back().m_Filename == "world.bin");
+        }
+    }
+
+    SECTION("v3")
+    {
+        FileBuffer buffer;
+        ReadTestFile("paratrooper_drop.ee", &buffer);
+
+        std::vector<ArchiveEntry_t> entries;
+        REQUIRE_NOTHROW(Parse(buffer, &entries));
+
+        SECTION("file was parsed and entries vector has results")
+        {
+            REQUIRE_FALSE(entries.empty());
+            REQUIRE(entries.at(2).m_Filename
+                    == "editor/entities/spawners/combatant_spawnrules/spawn_modules/paratrooper_drop.epe");
+        }
+
+        SECTION("can read entries")
+        {
+            std::vector<uint8_t> out_buffer;
+            /*ReadEntry(buffer, entries,
+                      "editor/entities/spawners/combatant_spawnrules/spawn_modules/paratrooper_drop.epe",
+               &out_buffer);*/
+            ReadEntry(buffer, entries, "ai/bts/01_micro_behaviors/vehicle/airplane_fly_on_spline.btc", &out_buffer);
+            REQUIRE_FALSE(out_buffer.empty());
+        }
+
+#if 0
+		SECTION("can write entries")
+        {
+            FileBuffer world_buffer;
+            ReadTestFile("world.bin", &world_buffer);
+
+            REQUIRE_NOTHROW(WriteEntry(buffer, &entries, "world.bin", world_buffer));
+            REQUIRE(entries.back().m_Filename == "world.bin");
+        }
+#endif
     }
 }
 

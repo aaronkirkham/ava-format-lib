@@ -1,5 +1,6 @@
 #pragma once
 
+#include "util/hashlittle.h"
 #include "util/math.h"
 
 #include "archives/archive_table.h"
