@@ -1,4 +1,4 @@
 bin/
 projects/
-tools/
 .DS_Store
+premake5.exe
