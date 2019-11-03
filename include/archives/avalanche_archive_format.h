@@ -9,8 +9,6 @@ static constexpr uint32_t AAF_MAGIC               = 0x464141;   // "AAF"
 static constexpr uint32_t AAF_CHUNK_MAGIC         = 0x4D415745; // "EWAM"
 static constexpr uint32_t AAF_MAX_CHUNK_DATA_SIZE = 0x2000000;
 static constexpr uint32_t AAF_PADDING_BYTE        = 0x30;
-static constexpr uint32_t ZLIB_HEADER_SIZE        = sizeof(uint8_t) + sizeof(uint8_t); // CMF + FLG
-static constexpr uint32_t ZLIB_CHECKSUM_SIZE      = sizeof(uint32_t);                  // ADLER32
 
 #pragma pack(push, 1)
 struct AafHeader {

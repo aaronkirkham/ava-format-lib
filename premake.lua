@@ -17,7 +17,7 @@ workspace "AvaFormatLib"
 
 project "AvaFormatLib"
   kind "StaticLib"
-  defines { "_CRT_SECURE_NO_WARNINGS", "DEF_WBITS=-15" }
+  defines { "_CRT_SECURE_NO_WARNINGS" }
   includedirs { "deps" }
   files { "src/**.cpp", "include/**.h" }
   files { "deps/zlib/*.c", "deps/zlib/*.h" }
