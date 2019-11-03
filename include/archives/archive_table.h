@@ -49,12 +49,12 @@ static_assert(sizeof(TabHeader) == 0x18, "TabHeader alignment is wrong!");
 static_assert(sizeof(TabEntry) == 0x14, "TabEntry alignment is wrong!");
 static_assert(sizeof(TabCompressedBlock) == 0x8, "TabCompressedBlock alignment is wrong!");
 
-void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entries,
-             std::vector<TabCompressedBlock>* out_compression_blocks = nullptr);
-bool ReadTabEntry(const std::vector<uint8_t>& buffer, uint32_t name_hash, TabEntry* out_entry);
-void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, const TabEntry& entry,
-                                const std::vector<TabCompressedBlock>* compression_blocks,
-                                std::vector<uint8_t>*                  out_buffer);
+void Parse(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entries,
+           std::vector<TabCompressedBlock>* out_compression_blocks = nullptr);
+
+void ReadEntry(const std::vector<uint8_t>& buffer, const uint32_t name_hash, TabEntry* out_entry);
+void ReadEntryBuffer(const std::vector<uint8_t>& archive_buffer, const TabEntry& entry,
+                     const std::vector<TabCompressedBlock>* compression_blocks, std::vector<uint8_t>* out_buffer);
 
 void WriteEntry(const std::string& filename, const std::vector<uint8_t>& file_buffer,
                 std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer,

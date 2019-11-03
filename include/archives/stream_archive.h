@@ -28,10 +28,12 @@ static_assert(sizeof(SarcHeader) == 0x10, "SarcHeader alignment is wrong!");
 void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* out_entries);
 void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* out_entries);
 
+void InitBuffer(std::vector<uint8_t>* buffer, const uint32_t version = 2);
+
 void ReadEntry(const std::vector<uint8_t>& buffer, const ArchiveEntry_t& entry, std::vector<uint8_t>* out_buffer);
 void ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEntry_t>& entries,
                const std::string& filename, std::vector<uint8_t>* out_buffer);
 
-void WriteEntry(std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* entries, const std::string& filename,
+void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry_t>* entries, const std::string& filename,
                 const std::vector<uint8_t>& file_buffer);
 }; // namespace ava::StreamArchive

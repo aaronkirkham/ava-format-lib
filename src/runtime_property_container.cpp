@@ -3,8 +3,6 @@
 #include "../include/util/byte_array_buffer.h"
 #include "../include/util/hashlittle.h"
 
-#include <queue>
-
 namespace ava::RuntimePropertyContainer
 {
 RuntimeContainer::RuntimeContainer(const std::vector<uint8_t>& buffer)

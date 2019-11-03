@@ -59,14 +59,14 @@ TEST_CASE("Archive Table Format", "[AvaFormatLib][TAB]")
     SECTION("invalid input argument throws std::invalid_argument")
     {
         std::vector<TabEntry> entries;
-        REQUIRE_THROWS_AS(ReadTab({}, &entries), std::invalid_argument);
-        REQUIRE_THROWS_AS(ReadTab(tab_buffer, nullptr), std::invalid_argument);
+        REQUIRE_THROWS_AS(Parse({}, &entries), std::invalid_argument);
+        REQUIRE_THROWS_AS(Parse(tab_buffer, nullptr), std::invalid_argument);
     }
 
     SECTION("file was parsed and entries vector has results")
     {
         std::vector<TabEntry> entries;
-        REQUIRE_NOTHROW(ReadTab(tab_buffer, &entries));
+        REQUIRE_NOTHROW(Parse(tab_buffer, &entries));
         REQUIRE_FALSE(entries.empty());
         REQUIRE(entries[0].m_NameHash == hashlittle("hello.bin"));
     }
@@ -74,10 +74,10 @@ TEST_CASE("Archive Table Format", "[AvaFormatLib][TAB]")
     SECTION("can read entries")
     {
         TabEntry entry{};
-        REQUIRE(ReadTabEntry(tab_buffer, hashlittle("world.bin"), &entry));
+        REQUIRE_NOTHROW(ReadEntry(tab_buffer, hashlittle("world.bin"), &entry));
 
         std::vector<uint8_t> file_buffer;
-        REQUIRE_NOTHROW(ReadEntryBufferFromArchive(arc_buffer, entry, nullptr, &file_buffer));
+        REQUIRE_NOTHROW(ReadEntryBuffer(arc_buffer, entry, nullptr, &file_buffer));
         REQUIRE(FilesAreTheSame(file_buffer, world_buffer));
     }
 
@@ -108,14 +108,14 @@ TEST_CASE("Archive Table Format (LEGACY)", "[AvaFormatLib][TAB]")
     SECTION("invalid input argument throws std::invalid_argument")
     {
         std::vector<TabEntry> entries;
-        REQUIRE_THROWS_AS(ReadTab({}, &entries), std::invalid_argument);
-        REQUIRE_THROWS_AS(ReadTab(tab_buffer, nullptr), std::invalid_argument);
+        REQUIRE_THROWS_AS(Parse({}, &entries), std::invalid_argument);
+        REQUIRE_THROWS_AS(Parse(tab_buffer, nullptr), std::invalid_argument);
     }
 
     SECTION("file was parsed and entries vector has results")
     {
         std::vector<TabEntry> entries;
-        REQUIRE_NOTHROW(ReadTab(tab_buffer, &entries));
+        REQUIRE_NOTHROW(Parse(tab_buffer, &entries));
         REQUIRE_FALSE(entries.empty());
         REQUIRE(entries[0].m_NameHash == hashlittle("hello.bin"));
     }
@@ -123,10 +123,10 @@ TEST_CASE("Archive Table Format (LEGACY)", "[AvaFormatLib][TAB]")
     SECTION("can read entries")
     {
         TabEntry entry{};
-        REQUIRE(ReadTabEntry(tab_buffer, hashlittle("world.bin"), &entry));
+        REQUIRE_NOTHROW(ReadEntry(tab_buffer, hashlittle("world.bin"), &entry));
 
         std::vector<uint8_t> file_buffer;
-        REQUIRE_NOTHROW(ReadEntryBufferFromArchive(arc_buffer, entry, &file_buffer));
+        REQUIRE_NOTHROW(ReadEntryBuffer(arc_buffer, entry, &file_buffer));
         REQUIRE(FilesAreTheSame(file_buffer, world_buffer));
     }
 
@@ -218,7 +218,7 @@ TEST_CASE("Stream Archive", "[AvaFormatLib][SARC]")
             FileBuffer world_buffer;
             ReadTestFile("world.bin", &world_buffer);
 
-            REQUIRE_NOTHROW(WriteEntry(buffer, &entries, "world.bin", world_buffer));
+            REQUIRE_NOTHROW(WriteEntry(&buffer, &entries, "world.bin", world_buffer));
             REQUIRE(entries.back().m_Filename == "world.bin");
         }
     }

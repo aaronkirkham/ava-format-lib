@@ -8,7 +8,7 @@
 
 namespace ava::legacy::ArchiveTable
 {
-void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entries)
+void Parse(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entries)
 {
     if (buffer.empty()) {
         throw std::invalid_argument("TAB input buffer can't be empty!");
@@ -41,23 +41,22 @@ void ReadTab(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entr
     }
 }
 
-bool ReadTabEntry(const std::vector<uint8_t>& buffer, uint32_t name_hash, TabEntry* out_entry)
+void ReadEntry(const std::vector<uint8_t>& buffer, uint32_t name_hash, TabEntry* out_entry)
 {
     std::vector<TabEntry> entries;
-    ReadTab(buffer, &entries);
+    Parse(buffer, &entries);
 
     const auto it = std::find_if(entries.begin(), entries.end(),
                                  [name_hash](const TabEntry& entry) { return entry.m_NameHash == name_hash; });
-    if (it != entries.end()) {
-        *out_entry = (*it);
-        return true;
+    if (it == entries.end()) {
+        throw std::runtime_error("entry was not found in archive table!");
     }
 
-    return false;
+    *out_entry = (*it);
 }
 
-void ReadEntryBufferFromArchive(const std::vector<uint8_t>& archive_buffer, const TabEntry& entry,
-                                std::vector<uint8_t>* out_buffer)
+void ReadEntryBuffer(const std::vector<uint8_t>& archive_buffer, const TabEntry& entry,
+                     std::vector<uint8_t>* out_buffer)
 {
     if (archive_buffer.empty()) {
         throw std::invalid_argument("input buffer can't be empty!");

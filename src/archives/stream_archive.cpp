@@ -152,6 +152,29 @@ void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* o
 }
 
 /**
+ * Init an empty buffer with a SARC header
+ *
+ * @param buffer Pointer to an empty input buffer
+ * @param version SARC version number
+ */
+void InitBuffer(std::vector<uint8_t>* buffer, const uint32_t version)
+{
+    if (!buffer || !buffer->empty()) {
+        throw std::runtime_error("input buffer must be empty!");
+    }
+
+    if (version < 2 || version > 3) {
+        throw std::runtime_error("Invalid SARC header version! (only v2 and v3 are supported)");
+    }
+
+    SarcHeader header;
+    header.m_Version = version;
+
+    byte_vector_writer buf(buffer);
+    buf.write((char*)&header, sizeof(SarcHeader));
+}
+
+/**
  * Read the buffer of an Archive Entry
  *
  * @param buffer Input buffer containing a raw SARC file buffer
@@ -209,13 +232,21 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEntr
  * @param filename String containing the name of the entry to write
  * @param file_buffer Input buffer containing the raw data for the file to write to the SARC buffer
  */
-void WriteEntry(std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* entries, const std::string& filename,
+void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry_t>* entries, const std::string& filename,
                 const std::vector<uint8_t>& file_buffer)
 {
-    byte_array_buffer buf(buffer);
+    if (!buffer || buffer->empty()) {
+        throw std::invalid_argument("input buffer can't be empty!");
+    }
+
+    if (!entries) {
+        throw std::invalid_argument("input entries can't be nullptr!");
+    }
+
+    byte_array_buffer buf(*buffer);
     std::istream      stream(&buf);
 
-    // read header
+    // read header if the buffer isn't empty
     SarcHeader header{};
     stream.read((char*)&header, sizeof(SarcHeader));
     if (header.m_Magic != SARC_MAGIC) {
@@ -243,6 +274,10 @@ void WriteEntry(std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* entri
     else {
         entry         = &(*it);
         entry->m_Size = static_cast<uint32_t>(file_buffer.size());
+    }
+
+    if (header.m_Version < 2 || header.m_Version > 3) {
+        throw std::runtime_error("Invalid SARC header version!");
     }
 
     switch (header.m_Version) {
@@ -284,7 +319,7 @@ void WriteEntry(std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* entri
                     if (entry.m_Filename == filename) {
                         std::memcpy(&temp_buffer[data_offset], file_buffer.data(), file_buffer.size());
                     } else {
-                        std::memcpy(&temp_buffer[data_offset], &buffer[entry.m_Offset], entry.m_Size);
+                        std::memcpy(&temp_buffer[data_offset], &(*buffer)[entry.m_Offset], entry.m_Size);
                     }
 
                     // update the entry data offset
@@ -295,7 +330,7 @@ void WriteEntry(std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* entri
                 current_data_offset = ava::math::align(current_data_offset + (data_offset != 0 ? entry.m_Size : 0));
             }
 
-            buffer = std::move(temp_buffer);
+            *buffer = std::move(temp_buffer);
             break;
         }
 
