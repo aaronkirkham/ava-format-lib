@@ -11,7 +11,7 @@ namespace ava::zlib
  * Reimplementation of zlib compress() function, with MAX_WBITS corrected, so we don't have to override DEF_WBITS.
  * Compresses to raw DEFLATE so we don't have to manually remove GZIP/ZLIB header/checksum.
  */
-int32_t compress(const uint8_t* src, uint32_t src_len, uint8_t* dest, uint32_t* dest_len)
+int32_t Compress(const uint8_t* src, uint32_t src_len, uint8_t* dest, uint32_t* dest_len)
 {
     z_stream       stream;
     int32_t        err;
@@ -54,7 +54,7 @@ int32_t compress(const uint8_t* src, uint32_t src_len, uint8_t* dest, uint32_t* 
 /**
  * Reimplementation of zlib uncompress() function, with MAX_WBITS corrected, so we don't have to override DEF_WBITS.
  */
-int32_t uncompress(const uint8_t* src, uint32_t* src_len, uint8_t* dest, uint32_t* dest_len)
+int32_t Decompress(const uint8_t* src, uint32_t* src_len, uint8_t* dest, uint32_t* dest_len)
 {
     z_stream   stream;
     int32_t    err;

@@ -313,8 +313,8 @@ TEST_CASE("Resource Bundle", "[AvaFormatLib][ResourceBundle]")
     SECTION("can write entries")
     {
         std::vector<uint8_t> rb_buffer;
-        REQUIRE_NOTHROW(WriteEntry("hello.bin", hello_buffer, &rb_buffer));
-        REQUIRE_NOTHROW(WriteEntry("world.bin", world_buffer, &rb_buffer));
+        REQUIRE_NOTHROW(WriteEntry(&rb_buffer, "hello.bin", hello_buffer));
+        REQUIRE_NOTHROW(WriteEntry(&rb_buffer, "world.bin", world_buffer));
 
         REQUIRE(FilesAreTheSame(rb_buffer, buffer));
     }
@@ -489,4 +489,52 @@ TEST_CASE("Avalanche Model Format", "[AvaFormatLib][AMF]")
         std::free(mesh_header);
         std::free(mesh_buffer);
     }
+}
+
+TEST_CASE("Avalanche Texture", "[AvaFormatLib][AVTX]")
+{
+    using namespace ava::AvalancheTexture;
+
+    FileBuffer buffer;
+    ReadTestFile("test2.ddsc", &buffer);
+
+    SECTION("invalid input argument throws std::invalid_argument")
+    {
+        TextureEntry         out_entry{};
+        std::vector<uint8_t> out_buffer;
+        REQUIRE_THROWS_AS(ReadBestEntry({}, &out_entry, &out_buffer), std::invalid_argument);
+        REQUIRE_THROWS_AS(ReadBestEntry(buffer, nullptr, &out_buffer), std::invalid_argument);
+        REQUIRE_THROWS_AS(ReadBestEntry(buffer, &out_entry, nullptr), std::invalid_argument);
+
+        REQUIRE_THROWS_AS(ReadEntry({}, 0, &out_entry, &out_buffer), std::invalid_argument);
+        REQUIRE_THROWS_AS(ReadEntry(buffer, 0, nullptr, &out_buffer), std::invalid_argument);
+        REQUIRE_THROWS_AS(ReadEntry(buffer, 0, &out_entry, nullptr), std::invalid_argument);
+        REQUIRE_THROWS_AS(ReadEntry(buffer, AVTX_MAX_STREAMS, &out_entry, &out_buffer), std::invalid_argument);
+    }
+
+#if 0
+	SECTION("source stream throws if source buffer is empty")
+	{
+		// @TODO
+		// ReadEntry(buffer, stream_index, out_entry, &out_buffer, {});
+	}
+#endif
+
+    SECTION("can read texture stream entry")
+    {
+        TextureEntry         entry{};
+        std::vector<uint8_t> out_buffer;
+        REQUIRE_NOTHROW(ReadBestEntry(buffer, &entry, &out_buffer));
+        REQUIRE(entry.m_Width == 300);
+        REQUIRE(entry.m_Height == 300);
+        REQUIRE_FALSE(out_buffer.empty());
+    }
+
+#if 0
+	SECTION("can write texture stream entry")
+	{
+		// @TODO
+		// WriteEntry(buffer, entry, texture_buffer, nullptr);
+	}
+#endif
 }

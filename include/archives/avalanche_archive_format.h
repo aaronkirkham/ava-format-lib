@@ -37,7 +37,7 @@ static_assert(sizeof(AafHeader) == 0x30, "AafHeader alignment is wrong!");
 static_assert(sizeof(AafChunk) == 0x10, "AafChunk alignment is wrong!");
 
 /**
- * Compress Avalanche Archive Format
+ * Compress to an AAF buffer
  *
  * @param buffer Input buffer containing a raw file buffer
  * @param out_buffer Pointer to byte vector where the compressed buffer will be written
@@ -45,7 +45,7 @@ static_assert(sizeof(AafChunk) == 0x10, "AafChunk alignment is wrong!");
 void Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer);
 
 /**
- * Decompress Avalanche Archive Format
+ * Decompress an AAF buffer
  *
  * @param buffer Input buffer containing a raw AAF file buffer
  * @param out_buffer Pointer to byte vector where the decompressed buffer will be written

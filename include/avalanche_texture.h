@@ -55,6 +55,7 @@ struct TextureEntry {
     uint16_t m_Height;
     uint16_t m_Depth;
     uint32_t m_Format;
+    bool     m_Source;
 };
 
 static_assert(sizeof(AvtxStream) == 0xC, "AvtxStream alignment is wrong!");
@@ -83,6 +84,18 @@ void ReadBestEntry(const std::vector<uint8_t>& buffer, TextureEntry* out_entry, 
  */
 void ReadEntry(const std::vector<uint8_t>& buffer, const uint8_t stream_index, TextureEntry* out_entry,
                std::vector<uint8_t>* out_buffer, const std::vector<uint8_t>& source_buffer = {});
+
+/**
+ * Write a texture entry to the AVTX buffer
+ *
+ * @param buffer Pointer to a raw AVTX file buffer where the entry will be written
+ * @param entry TextureEntry struct containing information to be written]
+ * @param texture_buffer Raw texture buffer to write to the AVTX file buffer
+ * @param source_buffer (Optional) Write to source buffer instead of AVTX file buffer (only required if entry.m_Source
+ * is set)
+ */
+void WriteEntry(std::vector<uint8_t>* buffer, const TextureEntry& entry, const std::vector<uint8_t>& texture_buffer,
+                std::vector<uint8_t>* source_buffer = nullptr);
 
 uint8_t  FindBestStream(const AvtxHeader& header, bool only_source = false);
 uint32_t GetRank(const AvtxHeader& header, uint8_t stream_index);

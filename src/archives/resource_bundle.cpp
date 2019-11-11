@@ -36,19 +36,19 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const uint32_t name_hash, std
     }
 }
 
-void WriteEntry(const std::filesystem::path& filename, const std::vector<uint8_t>& file_buffer,
-                std::vector<uint8_t>* out_buffer)
+void WriteEntry(std::vector<uint8_t>* out_buffer, const std::filesystem::path& filename,
+                const std::vector<uint8_t>& file_buffer)
 {
+    if (!out_buffer) {
+        throw std::invalid_argument("output buffer can not be nullptr!");
+    }
+
     if (filename.empty()) {
         throw std::invalid_argument("filename string can not be empty!");
     }
 
     if (file_buffer.empty()) {
         throw std::invalid_argument("input file buffer can not be empty!");
-    }
-
-    if (!out_buffer) {
-        throw std::invalid_argument("output buffer can not be nullptr!");
     }
 
     byte_vector_writer buf(out_buffer);

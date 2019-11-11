@@ -1,6 +1,7 @@
 #include "../include/avalanche_texture.h"
 
 #include "../include/util/byte_array_buffer.h"
+#include "../include/util/byte_vector_writer.h"
 #include "../include/util/hashlittle.h"
 
 namespace ava::AvalancheTexture
@@ -35,16 +36,16 @@ void ReadBestEntry(const std::vector<uint8_t>& buffer, TextureEntry* out_entry, 
     }
 
     // find the best stream to use
-    const uint8_t stream_index = FindBestStream(header, !source_buffer.empty());
-    assert(stream_index < AVTX_MAX_STREAMS);
-    const uint32_t    rank        = GetRank(header, stream_index);
-    const AvtxStream& avtx_stream = header.m_Streams[stream_index];
+    const uint8_t     stream_index = FindBestStream(header, !source_buffer.empty());
+    const uint32_t    rank         = GetRank(header, stream_index);
+    const AvtxStream& avtx_stream  = header.m_Streams[stream_index];
 
     TextureEntry entry{};
     entry.m_Width  = (header.m_Width >> rank);
     entry.m_Height = (header.m_Height >> rank);
     entry.m_Depth  = (header.m_Depth >> rank);
     entry.m_Format = header.m_Format;
+    entry.m_Source = avtx_stream.m_Source;
     *out_entry     = entry;
 
     // copy the pixel data
@@ -98,11 +99,30 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const uint8_t stream_index, T
     entry.m_Height = (header.m_Height >> rank);
     entry.m_Depth  = (header.m_Depth >> rank);
     entry.m_Format = header.m_Format;
+    entry.m_Source = avtx_stream.m_Source;
     *out_entry     = entry;
 
     // copy the pixel data
     const auto start = (avtx_stream.m_Source ? source_buffer.begin() : buffer.begin()) + avtx_stream.m_Offset;
     std::copy(start, start + avtx_stream.m_Size, std::back_inserter(*out_buffer));
+}
+
+void WriteEntry(std::vector<uint8_t>* buffer, const TextureEntry& entry, const std::vector<uint8_t>& texture_buffer,
+                std::vector<uint8_t>* source_buffer)
+{
+    if (!buffer) {
+        throw std::invalid_argument("pointer to output AVTX buffer can not be nullptr!");
+    }
+
+    if (texture_buffer.empty()) {
+        throw std::invalid_argument("input texture buffer can not be empty!");
+    }
+
+    if (entry.m_Source && !source_buffer) {
+        throw std::invalid_argument("source buffer must be set when entry is using source mode");
+    }
+
+    // @TODO
 }
 
 uint8_t FindBestStream(const AvtxHeader& header, bool only_source)
@@ -122,6 +142,7 @@ uint8_t FindBestStream(const AvtxHeader& header, bool only_source)
         }
     }
 
+    assert(stream_index < AVTX_MAX_STREAMS);
     return stream_index;
 }
 

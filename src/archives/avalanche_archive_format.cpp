@@ -57,7 +57,7 @@ void Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buff
         // compress the current chunk data
         uint32_t             compressed_size = compressBound(chunk.m_DecompressedSize);
         std::vector<uint8_t> compressed_block(compressed_size);
-        const int32_t        result = ava::zlib::compress((has_multiple_chunks ? chunk_data.data() : buffer.data()),
+        const int32_t        result = ava::zlib::Compress((has_multiple_chunks ? chunk_data.data() : buffer.data()),
                                                    chunk.m_DecompressedSize, compressed_block.data(), &compressed_size);
         if (result != Z_OK) {
 #ifdef _DEBUG
@@ -124,7 +124,7 @@ void Decompress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_bu
         uint32_t             decompressed_size = chunk.m_DecompressedSize;
         std::vector<uint8_t> decompressed_chunk_data(decompressed_size);
 
-        const int32_t result = ava::zlib::uncompress(chunk_data.data(), &compressed_size,
+        const int32_t result = ava::zlib::Decompress(chunk_data.data(), &compressed_size,
                                                      decompressed_chunk_data.data(), &decompressed_size);
         if (result != Z_OK || decompressed_size != chunk.m_DecompressedSize) {
 #ifdef _DEBUG
