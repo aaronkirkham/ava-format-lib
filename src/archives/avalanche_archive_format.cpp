@@ -8,12 +8,6 @@
 
 namespace ava::AvalancheArchiveFormat
 {
-/**
- * Compress Avalanche Archive Format
- *
- * @param buffer Input buffer containing a raw file buffer
- * @param out_buffer Pointer to char vector where the compressed buffer will be written
- */
 void Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
 {
     if (buffer.empty()) {
@@ -89,12 +83,6 @@ void Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buff
     }
 }
 
-/**
- * Decompress Avalanche Archive Format
- *
- * @param buffer Input buffer containing a raw AAF file buffer
- * @param out_buffer Pointer to char vector where the decompressed buffer will be written
- */
 void Decompress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
 {
     if (buffer.empty()) {

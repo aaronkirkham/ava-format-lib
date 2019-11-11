@@ -77,15 +77,15 @@ TEST_CASE("Archive Table Format", "[AvaFormatLib][TAB]")
         REQUIRE_NOTHROW(ReadEntry(tab_buffer, hashlittle("world.bin"), &entry));
 
         std::vector<uint8_t> file_buffer;
-        REQUIRE_NOTHROW(ReadEntryBuffer(arc_buffer, entry, nullptr, &file_buffer));
+        REQUIRE_NOTHROW(ReadEntryBuffer(arc_buffer, entry, &file_buffer, nullptr));
         REQUIRE(FilesAreTheSame(file_buffer, world_buffer));
     }
 
     SECTION("can write entries")
     {
         FileBuffer t_buffer, a_buffer;
-        REQUIRE_NOTHROW(WriteEntry("hello.bin", hello_buffer, &t_buffer, &a_buffer));
-        REQUIRE_NOTHROW(WriteEntry("world.bin", world_buffer, &t_buffer, &a_buffer, E_COMPRESS_LIBRARY_OODLE));
+        REQUIRE_NOTHROW(WriteEntry(&t_buffer, &a_buffer, "hello.bin", hello_buffer));
+        REQUIRE_NOTHROW(WriteEntry(&t_buffer, &a_buffer, "world.bin", world_buffer, E_COMPRESS_LIBRARY_OODLE));
         REQUIRE(FilesAreTheSame(t_buffer, tab_buffer));
         REQUIRE(FilesAreTheSame(a_buffer, arc_buffer));
     }
@@ -133,8 +133,8 @@ TEST_CASE("Archive Table Format (LEGACY)", "[AvaFormatLib][TAB]")
     SECTION("can write entries")
     {
         FileBuffer t_buffer, a_buffer;
-        REQUIRE_NOTHROW(WriteEntry("hello.bin", hello_buffer, &t_buffer, &a_buffer));
-        REQUIRE_NOTHROW(WriteEntry("world.bin", world_buffer, &t_buffer, &a_buffer));
+        REQUIRE_NOTHROW(WriteEntry(&t_buffer, &a_buffer, "hello.bin", hello_buffer));
+        REQUIRE_NOTHROW(WriteEntry(&t_buffer, &a_buffer, "world.bin", world_buffer));
         REQUIRE(FilesAreTheSame(t_buffer, tab_buffer));
         REQUIRE(FilesAreTheSame(a_buffer, arc_buffer));
     }
@@ -164,7 +164,7 @@ TEST_CASE("Avalanche Archive Format", "[AvaFormatLib][AAF]")
 
         SECTION("decompressed output buffer is valid SARC format")
         {
-            std::vector<ava::StreamArchive::ArchiveEntry_t> entries;
+            std::vector<ava::StreamArchive::ArchiveEntry> entries;
             REQUIRE_NOTHROW(ava::StreamArchive::Parse(decompressed_buffer, &entries));
             REQUIRE(entries.size() == 81);
             REQUIRE(entries[80].m_Filename == "editor/entities/gameobjects/grapplinghookwire.epe");
@@ -186,7 +186,7 @@ TEST_CASE("Stream Archive", "[AvaFormatLib][SARC]")
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
-        std::vector<ArchiveEntry_t> entries;
+        std::vector<ArchiveEntry> entries;
         REQUIRE_THROWS_AS(Parse({}, &entries), std::invalid_argument);
         REQUIRE_THROWS_AS(Parse({1}, nullptr), std::invalid_argument);
     }
@@ -196,7 +196,7 @@ TEST_CASE("Stream Archive", "[AvaFormatLib][SARC]")
         FileBuffer buffer;
         ReadTestFile("wgst002_skin_flame.sarc", &buffer);
 
-        std::vector<ArchiveEntry_t> entries;
+        std::vector<ArchiveEntry> entries;
         REQUIRE_NOTHROW(Parse(buffer, &entries));
 
         SECTION("file was parsed and entries vector has results")
@@ -228,7 +228,7 @@ TEST_CASE("Stream Archive", "[AvaFormatLib][SARC]")
         FileBuffer buffer;
         ReadTestFile("paratrooper_drop.ee", &buffer);
 
-        std::vector<ArchiveEntry_t> entries;
+        std::vector<ArchiveEntry> entries;
         REQUIRE_NOTHROW(Parse(buffer, &entries));
 
         SECTION("file was parsed and entries vector has results")
@@ -270,14 +270,14 @@ TEST_CASE("Stream Archive TOC", "[AvaFormatLib][TOC]")
 
     SECTION("invalid input argument throws std::invalid_argument")
     {
-        std::vector<ArchiveEntry_t> entries;
+        std::vector<ArchiveEntry> entries;
         REQUIRE_THROWS_AS(ParseTOC({}, &entries), std::invalid_argument);
         REQUIRE_THROWS_AS(ParseTOC(buffer, nullptr), std::invalid_argument);
     }
 
     SECTION("file was parsed and entries vector has results")
     {
-        std::vector<ArchiveEntry_t> entries;
+        std::vector<ArchiveEntry> entries;
         REQUIRE_NOTHROW(ParseTOC(buffer, &entries));
         REQUIRE_FALSE(entries.empty());
         REQUIRE(entries[9].m_Filename == "effects/textures/t_smoke_blast_alpha_dif.ddsc");

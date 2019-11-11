@@ -5,16 +5,15 @@
 
 namespace ava::AvalancheTexture
 {
-/**
- * Convert a DDSC buffer to DDS
- *
- * @param buffer Input buffer containing a raw DDSC file buffer
- * @param out_buffer Pointer to char vector where the output DDS buffer will be written
- */
-void Parse(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
+void ReadBestEntry(const std::vector<uint8_t>& buffer, TextureEntry* out_entry, std::vector<uint8_t>* out_buffer,
+                   const std::vector<uint8_t>& source_buffer)
 {
     if (buffer.empty()) {
         throw std::invalid_argument("AVTX input buffer can't be empty!");
+    }
+
+    if (!out_entry) {
+        throw std::invalid_argument("AVTX output entry can't be nullptr!");
     }
 
     if (!out_buffer) {
@@ -31,14 +30,79 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
         throw std::runtime_error("Invalid AVTX header magic!");
     }
 
-    // find the best stream to use
-    // @TODO: allow override
-    const uint8_t  stream_index = FindBestStream(header);
-    const uint32_t rank         = GetHighestRank(header, stream_index);
+    if (header.m_Version != 1) {
+        throw std::runtime_error("Invalid AVTX version!");
+    }
 
-#ifdef _DEBUG
-    __debugbreak();
-#endif
+    // find the best stream to use
+    const uint8_t stream_index = FindBestStream(header, !source_buffer.empty());
+    assert(stream_index < AVTX_MAX_STREAMS);
+    const uint32_t    rank        = GetRank(header, stream_index);
+    const AvtxStream& avtx_stream = header.m_Streams[stream_index];
+
+    TextureEntry entry{};
+    entry.m_Width  = (header.m_Width >> rank);
+    entry.m_Height = (header.m_Height >> rank);
+    entry.m_Depth  = (header.m_Depth >> rank);
+    entry.m_Format = header.m_Format;
+    *out_entry     = entry;
+
+    // copy the pixel data
+    const auto start = (avtx_stream.m_Source ? source_buffer.begin() : buffer.begin()) + avtx_stream.m_Offset;
+    std::copy(start, start + avtx_stream.m_Size, std::back_inserter(*out_buffer));
+}
+
+void ReadEntry(const std::vector<uint8_t>& buffer, const uint8_t stream_index, TextureEntry* out_entry,
+               std::vector<uint8_t>* out_buffer, const std::vector<uint8_t>& source_buffer)
+{
+    if (buffer.empty()) {
+        throw std::invalid_argument("AVTX input buffer can't be empty!");
+    }
+
+    if (stream_index >= AVTX_MAX_STREAMS) {
+        throw std::invalid_argument("AVTX invalid stream index");
+    }
+
+    if (!out_entry) {
+        throw std::invalid_argument("AVTX output entry can't be nullptr!");
+    }
+
+    if (!out_buffer) {
+        throw std::invalid_argument("AVTX output buffer can't be nullptr!");
+    }
+
+    byte_array_buffer buf(buffer);
+    std::istream      stream(&buf);
+
+    // read header
+    AvtxHeader header{};
+    stream.read((char*)&header, sizeof(AvtxHeader));
+    if (header.m_Magic != AVTX_MAGIC) {
+        throw std::runtime_error("Invalid AVTX header magic!");
+    }
+
+    if (header.m_Version != 1) {
+        throw std::runtime_error("Invalid AVTX version!");
+    }
+
+    // the requested stream was from source, and we provided no source buffer
+    const AvtxStream& avtx_stream = header.m_Streams[stream_index];
+    if (avtx_stream.m_Source && source_buffer.empty()) {
+        throw std::runtime_error("AVTX source buffer required!");
+    }
+
+    const uint32_t rank = GetRank(header, stream_index);
+
+    TextureEntry entry{};
+    entry.m_Width  = (header.m_Width >> rank);
+    entry.m_Height = (header.m_Height >> rank);
+    entry.m_Depth  = (header.m_Depth >> rank);
+    entry.m_Format = header.m_Format;
+    *out_entry     = entry;
+
+    // copy the pixel data
+    const auto start = (avtx_stream.m_Source ? source_buffer.begin() : buffer.begin()) + avtx_stream.m_Offset;
+    std::copy(start, start + avtx_stream.m_Size, std::back_inserter(*out_buffer));
 }
 
 uint8_t FindBestStream(const AvtxHeader& header, bool only_source)
@@ -61,19 +125,8 @@ uint8_t FindBestStream(const AvtxHeader& header, bool only_source)
     return stream_index;
 }
 
-uint32_t GetHighestRank(const AvtxHeader& header, uint8_t stream_index)
+uint32_t GetRank(const AvtxHeader& header, uint8_t stream_index)
 {
-    uint32_t rank = 0;
-    for (uint32_t i = 0; i < AVTX_MAX_STREAMS; ++i) {
-        if (i == stream_index) {
-            continue;
-        }
-
-        if (header.m_Streams[i].m_Size > header.m_Streams[stream_index].m_Size) {
-            ++rank;
-        }
-    }
-
-    return rank;
+    return (header.m_Mips - (header.m_MipsRedisent + stream_index));
 }
 }; // namespace ava::AvalancheTexture

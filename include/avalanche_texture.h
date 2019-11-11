@@ -50,11 +50,40 @@ struct AvtxHeader {
 };
 #pragma pack(pop)
 
+struct TextureEntry {
+    uint16_t m_Width;
+    uint16_t m_Height;
+    uint16_t m_Depth;
+    uint32_t m_Format;
+};
+
 static_assert(sizeof(AvtxStream) == 0xC, "AvtxStream alignment is wrong!");
 static_assert(sizeof(AvtxHeader) == 0x80, "AvtxHeader alignment is wrong!");
 
-void Parse(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer);
+/**
+ * Read the best ranked entry from the AVTX buffer
+ *
+ * @param buffer Input buffer containing a raw AVTX file buffer
+ * @param out_entry Pointer to TextureEntry struct where the texture information will be written
+ * @param out_buffer Pointer to a byte vector where the texture pixel data will be written
+ * @param source_buffer (Optional) Input source buffer containing raw texture data
+ */
+void ReadBestEntry(const std::vector<uint8_t>& buffer, TextureEntry* out_entry, std::vector<uint8_t>* out_buffer,
+                   const std::vector<uint8_t>& source_buffer = {});
+
+/**
+ * Read a specific entry from the AVTX buffer
+ *
+ * @param buffer Input buffer containing a raw AVTX file buffer
+ * @param stream_index Stream index to read from the AVTX buffer (some streams may require source_buffer)
+ * @param out_entry Pointer to TextureEntry struct where the texture information will be written
+ * @param out_buffer Pointer to a byte vector where the texture pixel data will be written
+ * @param source_buffer (Optional) Input source buffer containing raw texture data (only required if the
+ * AvtxStream.m_Source is set)
+ */
+void ReadEntry(const std::vector<uint8_t>& buffer, const uint8_t stream_index, TextureEntry* out_entry,
+               std::vector<uint8_t>* out_buffer, const std::vector<uint8_t>& source_buffer = {});
 
 uint8_t  FindBestStream(const AvtxHeader& header, bool only_source = false);
-uint32_t GetHighestRank(const AvtxHeader& header, uint8_t stream_index);
+uint32_t GetRank(const AvtxHeader& header, uint8_t stream_index);
 }; // namespace ava::AvalancheTexture

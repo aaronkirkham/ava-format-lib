@@ -15,13 +15,7 @@
 
 namespace ava::StreamArchive
 {
-/**
- * Parse a SARC file and extract file entries
- *
- * @param buffer Input buffer containing a raw SARC file buffer
- * @param out_entries Pointer to vector of ArchiveEntry_t's where the entries will be written
- */
-void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* out_entries)
+void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_entries)
 {
     if (buffer.empty()) {
         throw std::invalid_argument("SARC input buffer can't be empty!");
@@ -54,7 +48,7 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* out_
                 stream.read(filename.get(), length);
                 filename[length] = '\0';
 
-                ArchiveEntry_t entry{};
+                ArchiveEntry entry{};
                 entry.m_Filename = filename.get();
                 stream.read((char*)&entry.m_Offset, sizeof(entry.m_Offset));
                 stream.read((char*)&entry.m_Size, sizeof(entry.m_Size));
@@ -97,7 +91,7 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* out_
                 stream.read((char*)&name_hash, sizeof(uint32_t));
                 stream.ignore(sizeof(uint32_t)); // UNUSED: extension hash
 
-                ArchiveEntry_t entry{};
+                ArchiveEntry entry{};
                 entry.m_Filename = filenames[name_hash];
                 entry.m_Offset   = file_offset;
                 entry.m_Size     = uncompressed_size;
@@ -113,13 +107,7 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* out_
     }
 }
 
-/**
- * Parse a patched SARC file list, commonly used with the .TOC extension
- *
- * @param buffer Input buffer containing a raw TOC file buffer
- * @param out_entries Pointer to vector of ArchiveEntry_t's where the entries will be written
- */
-void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* out_entries)
+void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_entries)
 {
     if (buffer.empty()) {
         throw std::invalid_argument("SARC TOC input buffer can't be empty!");
@@ -143,7 +131,7 @@ void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* o
         filename[length] = '\0';
 
         // read archive entry
-        ArchiveEntry_t entry{};
+        ArchiveEntry entry{};
         entry.m_Filename = filename.get();
         stream.read((char*)&entry.m_Offset, sizeof(entry.m_Offset));
         stream.read((char*)&entry.m_Size, sizeof(entry.m_Size));
@@ -151,12 +139,6 @@ void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry_t>* o
     }
 }
 
-/**
- * Init an empty buffer with a SARC header
- *
- * @param buffer Pointer to an empty input buffer
- * @param version SARC version number
- */
 void InitBuffer(std::vector<uint8_t>* buffer, const uint32_t version)
 {
     if (!buffer || !buffer->empty()) {
@@ -174,14 +156,7 @@ void InitBuffer(std::vector<uint8_t>* buffer, const uint32_t version)
     buf.write((char*)&header, sizeof(SarcHeader));
 }
 
-/**
- * Read the buffer of an Archive Entry
- *
- * @param buffer Input buffer containing a raw SARC file buffer
- * @param entry Entry to read buffer of
- * @param out_buffer Pointer to char vector where the output entry buffer will be written
- */
-void ReadEntry(const std::vector<uint8_t>& buffer, const ArchiveEntry_t& entry, std::vector<uint8_t>* out_buffer)
+void ReadEntry(const std::vector<uint8_t>& buffer, const ArchiveEntry& entry, std::vector<uint8_t>* out_buffer)
 {
     if (buffer.empty()) {
         throw std::runtime_error("input buffer can't be empty!");
@@ -200,21 +175,13 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const ArchiveEntry_t& entry, 
     std::copy(start, start + entry.m_Size, std::back_inserter(*out_buffer));
 }
 
-/**
- * Read the buffer of an Archive Entry by filename
- *
- * @param buffer Input buffer containing a raw SARC file buffer
- * @param entries Vector of entries to read from, returned from Parse
- * @param filename String containing the name of the entry to read
- * @param out_buffer Pointer to char vector where the output entry buffer will be written
- */
-void ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEntry_t>& entries,
+void ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEntry>& entries,
                const std::string& filename, std::vector<uint8_t>* out_buffer)
 {
     const auto it = std::find_if(entries.begin(), entries.end(),
-                                 [filename](const ArchiveEntry_t& entry) { return entry.m_Filename == filename; });
+                                 [filename](const ArchiveEntry& entry) { return entry.m_Filename == filename; });
     if (it != entries.end()) {
-        const ArchiveEntry_t& entry = (*it);
+        const ArchiveEntry& entry = (*it);
 
         assert(entry.m_Offset != 0 && entry.m_Offset != -1);
         assert((entry.m_Offset + entry.m_Size) <= buffer.size());
@@ -224,15 +191,7 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEntr
     }
 }
 
-/**
- * Write a file to a SARC buffer
- *
- * @param buffer Input buffer containing a raw SARC file buffer
- * @param entries Vector of current archive entries, returned from Parse
- * @param filename String containing the name of the entry to write
- * @param file_buffer Input buffer containing the raw data for the file to write to the SARC buffer
- */
-void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry_t>* entries, const std::string& filename,
+void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries, const std::string& filename,
                 const std::vector<uint8_t>& file_buffer)
 {
     if (!buffer || buffer->empty()) {
@@ -256,13 +215,13 @@ void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry_t>* entri
     std::vector<uint8_t> temp_buffer;
     byte_vector_writer   tbuf(&temp_buffer);
 
-    ArchiveEntry_t* entry = nullptr;
-    const auto      it    = std::find_if(entries->begin(), entries->end(),
-                                 [filename](const ArchiveEntry_t& item) { return item.m_Filename == filename; });
+    ArchiveEntry* entry = nullptr;
+    const auto    it    = std::find_if(entries->begin(), entries->end(),
+                                 [filename](const ArchiveEntry& item) { return item.m_Filename == filename; });
 
     // file currently does not exist in the archive, add a new entry
     if (it == entries->end()) {
-        ArchiveEntry_t e{};
+        ArchiveEntry e{};
         e.m_Filename = filename;
         e.m_Offset   = 1; // @NOTE: offset will be updated later, just make sure this is >0
         e.m_Size     = static_cast<uint32_t>(file_buffer.size());
@@ -337,7 +296,7 @@ void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry_t>* entri
         case 3: {
             // calculate strings length
             const uint32_t strings_length = std::accumulate(
-                entries->begin(), entries->end(), 0, [](uint32_t accumulator, const ArchiveEntry_t& entry) {
+                entries->begin(), entries->end(), 0, [](uint32_t accumulator, const ArchiveEntry& entry) {
                     return accumulator + (uint32_t)entry.m_Filename.length() + 1;
                 });
 

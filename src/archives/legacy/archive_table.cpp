@@ -72,19 +72,19 @@ void ReadEntryBuffer(const std::vector<uint8_t>& archive_buffer, const TabEntry&
     std::memcpy(out_buffer->data(), archive_buffer.data() + entry.m_Offset, entry.m_Size);
 }
 
-void WriteEntry(const std::string& filename, const std::vector<uint8_t>& file_buffer,
-                std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer)
+void WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer, const std::string& filename,
+                const std::vector<uint8_t>& file_buffer)
 {
+    if (!out_tab_buffer || !out_arc_buffer) {
+        throw std::invalid_argument("pointers to output tab/arc buffers can not be nullptr!");
+    }
+
     if (filename.empty()) {
         throw std::invalid_argument("filename string can not be empty!");
     }
 
     if (file_buffer.empty()) {
         throw std::invalid_argument("input file buffer can not be empty!");
-    }
-
-    if (!out_tab_buffer || !out_arc_buffer) {
-        throw std::invalid_argument("pointers to output tab/arc buffers can not be nullptr!");
     }
 
     byte_vector_writer buf(out_tab_buffer);

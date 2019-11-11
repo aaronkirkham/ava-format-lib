@@ -25,12 +25,41 @@ struct TabEntry {
 static_assert(sizeof(TabHeader) == 0xC, "TabHeader (legacy) alignment is wrong!");
 static_assert(sizeof(TabEntry) == 0xC, "TabEntry (legacy) alignment is wrong!");
 
+/**
+ * Parse a legacy TAB file and extract file entries
+ *
+ * @param buffer Input buffer containing a raw legacy TAB file buffer
+ * @param out_entries Pointer to vector of legacy TabEntry's where the entries will be written
+ */
 void Parse(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entries);
 
+/**
+ * Read a single legacy entry from a TAB file buffer
+ *
+ * @param buffer Input buffer containing a raw legacy TAB file buffer
+ * @param name_hash Filename hash of the entry to read
+ * @param out_entry Pointer to a legacy TabEntry struct where the entry will be written
+ */
 void ReadEntry(const std::vector<uint8_t>& buffer, uint32_t name_hash, TabEntry* out_entry);
+
+/**
+ * Read a legacy entry file buffer from an ARC file buffer
+ *
+ * @param archive_buffer Input buffer containing a raw ARC file buffer
+ * @param entry Entry to read from the ARC file buffer
+ * @param out_buffer Pointer to a byte vector where the entry file buffer will be written
+ */
 void ReadEntryBuffer(const std::vector<uint8_t>& archive_buffer, const TabEntry& entry,
                      std::vector<uint8_t>* out_buffer);
 
-void WriteEntry(const std::string& filename, const std::vector<uint8_t>& file_buffer,
-                std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer);
+/**
+ * Write a single legacy entry to a legacy TAB & ARC file buffer
+ *
+ * @param out_tab_buffer Pointer to a raw legacy TAB file buffer where the entry will be written
+ * @param out_arc_buffer Pointer to a raw ARC file buffer where the entry file buffer will be written
+ * @param filename String containing the name of the legacy entry to write
+ * @param file_buffer Entry file buffer to write to the ARC file buffer
+ */
+void WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer, const std::string& filename,
+                const std::vector<uint8_t>& file_buffer);
 }; // namespace ava::legacy::ArchiveTable

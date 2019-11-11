@@ -49,14 +49,48 @@ static_assert(sizeof(TabHeader) == 0x18, "TabHeader alignment is wrong!");
 static_assert(sizeof(TabEntry) == 0x14, "TabEntry alignment is wrong!");
 static_assert(sizeof(TabCompressedBlock) == 0x8, "TabCompressedBlock alignment is wrong!");
 
+/**
+ * Parse a TAB file and extract file entries
+ *
+ * @param buffer Input buffer containing a raw TAB file buffer
+ * @param out_entries Pointer to vector of TabEntry's where the entries will be written
+ * @param out_compression_blocks (Optional) Pointer to vector of TabCompressedBlock where the compression entries will
+ * be written
+ */
 void Parse(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entries,
            std::vector<TabCompressedBlock>* out_compression_blocks = nullptr);
 
+/**
+ * Read a single entry from a TAB file buffer
+ *
+ * @param buffer Input buffer containing a raw TAB file buffer
+ * @param name_hash Filename hash of the entry to read
+ * @param out_entry Pointer to a TabEntry struct where the entry will be written
+ */
 void ReadEntry(const std::vector<uint8_t>& buffer, const uint32_t name_hash, TabEntry* out_entry);
-void ReadEntryBuffer(const std::vector<uint8_t>& archive_buffer, const TabEntry& entry,
-                     const std::vector<TabCompressedBlock>* compression_blocks, std::vector<uint8_t>* out_buffer);
 
-void WriteEntry(const std::string& filename, const std::vector<uint8_t>& file_buffer,
-                std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer,
-                ECompressLibrary compression = E_COMPRESS_LIBRARY_NONE);
+/**
+ * Read an entry file buffer from an ARC file buffer
+ *
+ * @param archive_buffer Input buffer containing a raw ARC file buffer
+ * @param entry Entry to read from the ARC file buffer
+ * @param out_buffer Pointer to a byte vector where the entry file buffer will be written
+ * @param compression_blocks (Optional) Pointer to a vector of TabCompressedBlocks (only required if
+ * entry.m_CompressedBlockIndex != 0)
+ */
+void ReadEntryBuffer(const std::vector<uint8_t>& archive_buffer, const TabEntry& entry,
+                     std::vector<uint8_t>*                  out_buffer,
+                     const std::vector<TabCompressedBlock>* compression_blocks = nullptr);
+
+/**
+ * Write a single entry to a TAB & ARC file buffer
+ *
+ * @param out_tab_buffer Pointer to a raw TAB file buffer where the entry will be written
+ * @param out_arc_buffer Pointer to a raw ARC file buffer where the entry file buffer will be written
+ * @param filename String containing the name of the entry to write
+ * @param file_buffer Entry file buffer to write to the ARC file buffer
+ * @param compression (Optional) Compression method to use to compress the entry file buffer
+ */
+void WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer, const std::string& filename,
+                const std::vector<uint8_t>& file_buffer, ECompressLibrary compression = E_COMPRESS_LIBRARY_NONE);
 }; // namespace ava::ArchiveTable
