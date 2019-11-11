@@ -1,11 +1,16 @@
 #pragma once
 
+#define AVAFORMATLIB_VERSION_MAJOR 1
+#define AVAFORMATLIB_VERSION_MINOR 0
+#define AVAFORMATLIB_VERSION_REVISION 0
+
 #include "util/hashlittle.h"
 #include "util/math.h"
 
 #include "archives/archive_table.h"
 #include "archives/avalanche_archive_format.h"
 #include "archives/oodle_helper.h"
+#include "archives/resource_bundle.h"
 #include "archives/stream_archive.h"
 
 #include "models/avalanche_model_format.h"

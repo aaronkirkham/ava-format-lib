@@ -11,7 +11,6 @@ struct ResourceEntry {
     uint32_t path_hash;
     uint32_t extension_hash;
     uint32_t file_size;
-    uint8_t  file_buffer[0];
 };
 #pragma pack(pop)
 

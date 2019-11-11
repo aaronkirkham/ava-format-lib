@@ -284,6 +284,42 @@ TEST_CASE("Stream Archive TOC", "[AvaFormatLib][TOC]")
     }
 }
 
+TEST_CASE("Resource Bundle", "[AvaFormatLib][ResourceBundle]")
+{
+    using namespace ava::ResourceBundle;
+
+    FileBuffer buffer;
+    ReadTestFile("test1.resourcebundle", &buffer);
+
+    FileBuffer hello_buffer, world_buffer;
+    ReadTestFile("hello.bin", &hello_buffer);
+    ReadTestFile("world.bin", &world_buffer);
+
+    SECTION("invalid input argument throws std::invalid_argument")
+    {
+        std::vector<uint8_t> out_buffer;
+        REQUIRE_THROWS_AS(ReadEntry({}, 0x0, &out_buffer), std::invalid_argument);
+        REQUIRE_THROWS_AS(ReadEntry(buffer, 0x0, nullptr), std::invalid_argument);
+    }
+
+    SECTION("can read entries")
+    {
+        std::vector<uint8_t> out_buffer;
+        REQUIRE_NOTHROW(ReadEntry(buffer, 0x6ca6d4b9, &out_buffer));
+
+        REQUIRE(FilesAreTheSame(out_buffer, world_buffer));
+    }
+
+    SECTION("can write entries")
+    {
+        std::vector<uint8_t> rb_buffer;
+        REQUIRE_NOTHROW(WriteEntry("hello.bin", hello_buffer, &rb_buffer));
+        REQUIRE_NOTHROW(WriteEntry("world.bin", world_buffer, &rb_buffer));
+
+        REQUIRE(FilesAreTheSame(rb_buffer, buffer));
+    }
+}
+
 TEST_CASE("Runtime Property Container", "[AvaFormatLib][RTPC]")
 {
     using namespace ava::RuntimePropertyContainer;

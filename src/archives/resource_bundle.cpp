@@ -24,12 +24,15 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const uint32_t name_hash, std
         ResourceEntry entry;
         stream.read((char*)&entry, sizeof(ResourceEntry));
 
-#ifdef _DEBUG
-        __debugbreak();
-#endif
+        // copy the file buffer
         if (entry.path_hash == name_hash) {
-            // @TODO
+            out_buffer->resize(entry.file_size);
+            stream.read((char*)out_buffer->data(), entry.file_size);
+            break;
         }
+
+        // skip the current file buffer and get to the next entry
+        stream.ignore(entry.file_size);
     }
 }
 
@@ -51,9 +54,9 @@ void WriteEntry(const std::filesystem::path& filename, const std::vector<uint8_t
     byte_vector_writer buf(out_buffer);
 
     ResourceEntry entry{};
-    entry.path_hash      = hashlittle(filename_str.stem().string().c_str());
+    entry.path_hash      = hashlittle(filename.stem().string().c_str());
     entry.extension_hash = hashlittle(filename.extension().string().c_str());
-    entry.file_size      = file_buffer.size();
+    entry.file_size      = static_cast<uint32_t>(file_buffer.size());
 
     buf.write((char*)&entry, sizeof(ResourceEntry));
     std::copy(file_buffer.begin(), file_buffer.end(), std::back_inserter(*out_buffer));
