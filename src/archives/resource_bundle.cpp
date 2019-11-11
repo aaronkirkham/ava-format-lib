@@ -54,7 +54,7 @@ void WriteEntry(const std::filesystem::path& filename, const std::vector<uint8_t
     byte_vector_writer buf(out_buffer);
 
     ResourceEntry entry{};
-    entry.path_hash      = hashlittle(filename.stem().string().c_str());
+    entry.path_hash      = hashlittle(filename.string().c_str());
     entry.extension_hash = hashlittle(filename.extension().string().c_str());
     entry.file_size      = static_cast<uint32_t>(file_buffer.size());
 

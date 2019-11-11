@@ -305,7 +305,7 @@ TEST_CASE("Resource Bundle", "[AvaFormatLib][ResourceBundle]")
     SECTION("can read entries")
     {
         std::vector<uint8_t> out_buffer;
-        REQUIRE_NOTHROW(ReadEntry(buffer, 0x6ca6d4b9, &out_buffer));
+        REQUIRE_NOTHROW(ReadEntry(buffer, hashlittle("world.bin"), &out_buffer));
 
         REQUIRE(FilesAreTheSame(out_buffer, world_buffer));
     }
