@@ -113,9 +113,15 @@ struct AdfType {
     uint16_t       m_Flags;
     EAdfScalarType m_ScalarType;
     uint32_t       m_SubTypeHash;
-    uint32_t       m_ArraySizeOrBitCount;
-    uint32_t       m_MemberCount;
-    AdfMember      m_Members[0];
+    union {
+        uint32_t m_BitCount;  // Only for ADF_TYPE_BITFIELD
+        uint32_t m_ArraySize; // Only for ADF_TYPE_INLINE_ARRAY
+    };
+    union {
+        uint32_t m_MemberCount; // Only for ADF_TYPE_STRUCT and ADF_TYPE_ENUM
+        uint32_t m_DataAlign;
+    };
+    AdfMember m_Members[0];
 
     AdfEnum& Enum(uint32_t i)
     {
@@ -129,7 +135,17 @@ struct AdfType {
 
     const size_t DataSize() const
     {
-        return (sizeof(AdfType) + ((m_Type != ADF_TYPE_ENUM ? sizeof(AdfMember) : sizeof(AdfEnum)) * m_MemberCount));
+        uint32_t member_count = 0;
+        uint32_t member_size  = sizeof(AdfMember);
+        if (m_Type == ADF_TYPE_STRUCT || m_Type == ADF_TYPE_ENUM) {
+            member_count = m_MemberCount;
+
+            if (m_Type == ADF_TYPE_ENUM) {
+                member_size = sizeof(AdfEnum);
+            }
+        }
+
+        return (sizeof(AdfType) + (member_count * member_size));
     }
 };
 

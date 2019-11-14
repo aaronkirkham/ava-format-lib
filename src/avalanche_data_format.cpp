@@ -90,17 +90,17 @@ void ADF::AddBuiltInType(EAdfType type, EAdfScalarType scalar_type, uint32_t siz
     }
 
     // create type definition
-    AdfType* def               = new AdfType;
-    def->m_Type                = type;
-    def->m_Size                = size;
-    def->m_Align               = alignment;
-    def->m_TypeHash            = type_hash;
-    def->m_Name                = GetStringIndex(name);
-    def->m_Flags               = flags;
-    def->m_ScalarType          = scalar_type;
-    def->m_SubTypeHash         = 0;
-    def->m_ArraySizeOrBitCount = 0;
-    def->m_MemberCount         = 0;
+    AdfType* def       = new AdfType;
+    def->m_Type        = type;
+    def->m_Size        = size;
+    def->m_Align       = alignment;
+    def->m_TypeHash    = type_hash;
+    def->m_Name        = GetStringIndex(name);
+    def->m_Flags       = flags;
+    def->m_ScalarType  = scalar_type;
+    def->m_SubTypeHash = 0;
+    def->m_ArraySize   = 0;
+    def->m_MemberCount = 0;
     m_Types.push_back(def);
 }
 
@@ -241,11 +241,13 @@ void ADF::AddTypes(const std::vector<uint8_t>& buffer)
         type->m_Name = GetStringIndex(GetString(type->m_Name, &header, buffer));
 
         // reindex all member type names
-        const bool is_enum = (type->m_Type == ADF_TYPE_ENUM);
-        for (uint32_t x = 0; x < type->m_MemberCount; ++x) {
-            const void*    member            = (is_enum ? (void*)&type->Enum(x) : (void*)&type->m_Members[x]);
-            const uint64_t member_name_index = *(uint64_t*)member;
-            *(uint64_t*)member               = GetStringIndex(GetString(member_name_index, &header, buffer));
+        if (type->m_Type == ADF_TYPE_STRUCT || type->m_Type == ADF_TYPE_ENUM) {
+            const bool is_enum = (type->m_Type == ADF_TYPE_ENUM);
+            for (uint32_t x = 0; x < type->m_MemberCount; ++x) {
+                const void*    member            = (is_enum ? (void*)&type->Enum(x) : (void*)&type->m_Members[x]);
+                const uint64_t member_name_index = *(uint64_t*)member;
+                *(uint64_t*)member               = GetStringIndex(GetString(member_name_index, &header, buffer));
+            }
         }
 
         m_Types.push_back(type);
