@@ -267,5 +267,10 @@ class ADF
     {
         return &m_Buffer;
     }
+
+    const std::string& GetString(const uint64_t index)
+    {
+        return m_Strings[index];
+    }
 };
 }; // namespace ava::AvalancheDataFormat
