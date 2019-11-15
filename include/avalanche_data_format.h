@@ -167,6 +167,13 @@ static_assert(sizeof(AdfEnum) == 0xC, "AdfEnum alignment is wrong.");
 static_assert(sizeof(AdfType) == 0x28, "AdfType alignment is wrong.");
 static_assert(sizeof(SInstanceInfo) == 0x1C, "SInstanceInfo alignment is wrong.");
 
+/**
+ * Parse ADF buffer header
+ *
+ * @param buffer Buffer containing the ADF header data
+ * @param out_header Pointer to AdfHeader where the data will be written
+ * @param out_description Pointer to a string where the header description will be written (if available)
+ */
 void ParseHeader(const std::vector<uint8_t>& buffer, AdfHeader* out_header, const char** out_description = nullptr);
 
 class ADF
@@ -179,8 +186,7 @@ class ADF
     std::map<uint32_t, std::string> m_StringHashes;
 
     void AddBuiltInType(EAdfType type, EAdfScalarType scalar_type, uint32_t size, const char* name, uint16_t flags = 3);
-    AdfType* FindType(const uint32_t type_hash);
-    void     LoadInlineOffsets(const AdfType* type, char* payload, const uint32_t offset = 0);
+    void LoadInlineOffsets(const AdfType* type, char* payload, const uint32_t offset = 0);
 
     const char* GetString(uint64_t index, const AdfHeader* header, const std::vector<uint8_t>& buffer)
     {
@@ -210,10 +216,43 @@ class ADF
 
     void AddTypes(const std::vector<uint8_t>& buffer);
 
+    /**
+     * Find a type from its hash
+     *
+     * @param type_hash Type name hash of the type to find
+     */
+    AdfType* FindType(const uint32_t type_hash);
+
+    /**
+     * Get an instance from an ADF buffer
+     *
+     * @param index Index of the instance to read from the ADF buffer
+     * @param out_instance_info Pointer to SInstanceInfo where the instance data will be written
+     */
     void GetInstance(uint32_t index, SInstanceInfo* out_instance_info);
+
+    /**
+     * Read an instance from an ADF buffer
+     *
+     * @param name_hash Name hash of the instance to read from the ADF buffer
+     * @param type_hash Type hash of the instance to read from the ADF buffer
+     * @param out_instance Pointer to an instance where the data will be written
+     */
     void ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instance);
+
+    /**
+     * Read an instance from an ADF buffer
+     *
+     * @param instance_info Instance info returned from GetInstance
+     * @param out_instance Pointer to an instance where the data will be written
+     */
     void ReadInstance(const SInstanceInfo& instance_info, void** out_instance);
 
+    /**
+     * Name hash lookup
+     *
+     * @param hash Name hash to lookup
+     */
     const char* HashLookup(const uint32_t hash)
     {
         const auto it = m_StringHashes.find(hash);
@@ -222,6 +261,11 @@ class ADF
         }
 
         return it->second.c_str();
+    }
+
+    const std::vector<uint8_t>* GetBuffer()
+    {
+        return &m_Buffer;
     }
 };
 }; // namespace ava::AvalancheDataFormat

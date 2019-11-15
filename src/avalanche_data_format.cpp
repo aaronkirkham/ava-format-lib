@@ -7,13 +7,6 @@
 
 namespace ava::AvalancheDataFormat
 {
-/**
- * Parse ADF buffer header
- *
- * @param buffer Buffer containing the ADF header data
- * @param out_header Pointer to AdfHeader where the data will be written
- * @param out_description Pointer to a string where the header description will be written (if available)
- */
 void ParseHeader(const std::vector<uint8_t>& buffer, AdfHeader* out_header, const char** out_description)
 {
     if (buffer.empty() || buffer.size() < 24) {
@@ -102,13 +95,6 @@ void ADF::AddBuiltInType(EAdfType type, EAdfScalarType scalar_type, uint32_t siz
     def->m_ArraySize   = 0;
     def->m_MemberCount = 0;
     m_Types.push_back(def);
-}
-
-AdfType* ADF::FindType(const uint32_t type_hash)
-{
-    const auto it = std::find_if(m_Types.begin(), m_Types.end(),
-                                 [type_hash](const AdfType* type) { return type->m_TypeHash == type_hash; });
-    return (it != m_Types.end() ? *it : nullptr);
 }
 
 void ADF::LoadInlineOffsets(const AdfType* type, char* payload, const uint32_t offset)
@@ -255,12 +241,13 @@ void ADF::AddTypes(const std::vector<uint8_t>& buffer)
     }
 }
 
-/**
- * Get an instance from an ADF buffer
- *
- * @param index Index of the instance to read from the ADF buffer
- * @param out_instance_info Pointer to SInstanceInfo where the instance data will be written
- */
+AdfType* ADF::FindType(const uint32_t type_hash)
+{
+    const auto it = std::find_if(m_Types.begin(), m_Types.end(),
+                                 [type_hash](const AdfType* type) { return type->m_TypeHash == type_hash; });
+    return (it != m_Types.end() ? *it : nullptr);
+}
+
 void ADF::GetInstance(uint32_t index, SInstanceInfo* out_instance_info)
 {
     if (!out_instance_info) {
@@ -288,13 +275,6 @@ void ADF::GetInstance(uint32_t index, SInstanceInfo* out_instance_info)
     out_instance_info->m_InstanceSize = 0;
 }
 
-/**
- * Read an instance from an ADF buffer
- *
- * @param name_hash Name hash of the instance to read from the ADF buffer
- * @param type_hash Type hash of the instance to read from the ADF buffer
- * @param out_instance Pointer to an instance where the data will be written
- */
 void ADF::ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instance)
 {
     // find the instance
@@ -343,12 +323,6 @@ void ADF::ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instan
     *out_instance = mem;
 }
 
-/**
- * Read an instance from an ADF buffer
- *
- * @param instance_info Instance info returned from GetInstance
- * @param out_instance Pointer to an instance where the data will be written
- */
 void ADF::ReadInstance(const SInstanceInfo& instance_info, void** out_instance)
 {
     return ReadInstance(instance_info.m_NameHash, instance_info.m_TypeHash, out_instance);
