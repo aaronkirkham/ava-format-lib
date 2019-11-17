@@ -8,9 +8,9 @@ namespace ava::ResourceBundle
 {
 #pragma pack(push, 1)
 struct ResourceEntry {
-    uint32_t path_hash;
-    uint32_t extension_hash;
-    uint32_t file_size;
+    uint32_t m_NameHash;
+    uint32_t m_ExtensionHash;
+    uint32_t m_Size;
 };
 #pragma pack(pop)
 

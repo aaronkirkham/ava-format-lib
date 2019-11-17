@@ -83,6 +83,22 @@ void ReadEntryBuffer(const std::vector<uint8_t>& archive_buffer, const TabEntry&
                      const std::vector<TabCompressedBlock>* compression_blocks = nullptr);
 
 /**
+ * xxxxxx
+ *
+ */
+void DecompressEntryBuffer(const std::vector<uint8_t>& buffer, const TabEntry& entry, std::vector<uint8_t>* out_buffer,
+                           const std::vector<TabCompressedBlock>& compression_blocks = {});
+
+/**
+ * Return total size required for compressed buffer size
+ *
+ * @param entry Entry to get the total buffer size of
+ * @param compression_blocks (Optional) Vector of TabCompressedBlocks (required if entry.m_CompressedBlockIndex != 0)
+ */
+uint32_t GetEntryRequiredBufferSize(const TabEntry&                        entry,
+                                    const std::vector<TabCompressedBlock>& compression_blocks = {});
+
+/**
  * Write a single entry to a TAB & ARC file buffer
  *
  * @param out_tab_buffer Pointer to a raw TAB file buffer where the entry will be written

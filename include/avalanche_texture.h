@@ -24,7 +24,7 @@ struct AvtxStream {
     uint32_t m_Size;
     uint16_t m_Alignment;
     bool     m_TileMode;
-    bool     m_Source;
+    uint8_t  m_Source;
 };
 
 struct AvtxHeader {
@@ -55,7 +55,7 @@ struct TextureEntry {
     uint16_t m_Height;
     uint16_t m_Depth;
     uint32_t m_Format;
-    bool     m_Source;
+    uint8_t  m_Source;
 };
 
 static_assert(sizeof(AvtxStream) == 0xC, "AvtxStream alignment is wrong!");
@@ -97,6 +97,6 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const uint8_t stream_index, T
 void WriteEntry(std::vector<uint8_t>* buffer, const TextureEntry& entry, const std::vector<uint8_t>& texture_buffer,
                 std::vector<uint8_t>* source_buffer = nullptr);
 
-uint8_t  FindBestStream(const AvtxHeader& header, bool only_source = false);
+uint8_t  FindBestStream(const AvtxHeader& header, uint8_t source = 0);
 uint32_t GetRank(const AvtxHeader& header, uint8_t stream_index);
 }; // namespace ava::AvalancheTexture

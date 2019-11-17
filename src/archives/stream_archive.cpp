@@ -73,7 +73,7 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_en
                 std::string filename;
                 std::getline(stream, filename, '\0');
 
-                const uint32_t name_hash = hashlittle(filename.c_str());
+                const uint32_t name_hash = ava::hashlittle(filename.c_str());
                 filenames[name_hash]     = std::move(filename);
             }
 
@@ -136,6 +136,64 @@ void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out
         stream.read((char*)&entry.m_Offset, sizeof(entry.m_Offset));
         stream.read((char*)&entry.m_Size, sizeof(entry.m_Size));
         out_entries->emplace_back(std::move(entry));
+    }
+}
+
+void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* entries, uint32_t* out_total_added,
+              uint32_t* out_total_patched)
+{
+    if (buffer.empty()) {
+        throw std::invalid_argument("SARC TOC input buffer can't be empty!");
+    }
+
+    if (!entries) {
+        throw std::invalid_argument("SARC TOC entries vector can't be nullptr!");
+    }
+
+    byte_array_buffer buf(buffer);
+    std::istream      stream(&buf);
+
+    uint32_t total_added   = 0;
+    uint32_t total_patched = 0;
+
+    // read entries
+    while (static_cast<size_t>(stream.tellg()) < buffer.size()) {
+        uint32_t length;
+        stream.read((char*)&length, sizeof(uint32_t));
+
+        // read the filename string
+        const auto filename = std::unique_ptr<char[]>(new char[length + 1]);
+        stream.read(filename.get(), length);
+        filename[length] = '\0';
+
+        // read archive entry
+        ArchiveEntry entry{};
+        entry.m_Filename = filename.get();
+        stream.read((char*)&entry.m_Offset, sizeof(entry.m_Offset));
+        stream.read((char*)&entry.m_Size, sizeof(entry.m_Size));
+
+        const auto it = std::find_if(entries->begin(), entries->end(),
+                                     [&](const ArchiveEntry& item) { return item.m_Filename == entry.m_Filename; });
+        if (it == entries->end()) {
+            entries->emplace_back(std::move(entry));
+            ++total_added;
+        } else {
+            if (((*it).m_Offset != entry.m_Offset || (*it).m_Size != entry.m_Size)) {
+                ++total_patched;
+            }
+
+            // update file offset and size
+            (*it).m_Offset = entry.m_Offset;
+            (*it).m_Size   = entry.m_Size;
+        }
+    }
+
+    if (out_total_added) {
+        *out_total_added = total_added;
+    }
+
+    if (out_total_patched) {
+        *out_total_patched = total_patched;
     }
 }
 
@@ -318,6 +376,20 @@ void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries
 #endif
             break;
         }
+    }
+}
+
+void WriteTOC(std::vector<uint8_t>* buffer, const std::vector<ArchiveEntry>& entries)
+{
+    byte_vector_writer buf(buffer);
+
+    for (const auto& entry : entries) {
+        const uint32_t filename_len = static_cast<uint32_t>(entry.m_Filename.length());
+
+        buf.write((char*)&filename_len, sizeof(uint32_t));
+        buf.write(entry.m_Filename.c_str(), filename_len);
+        buf.write((char*)&entry.m_Offset, sizeof(uint32_t));
+        buf.write((char*)&entry.m_Size, sizeof(uint32_t));
     }
 }
 }; // namespace ava::StreamArchive

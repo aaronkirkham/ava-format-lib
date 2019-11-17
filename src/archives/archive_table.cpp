@@ -161,6 +161,124 @@ void ReadEntryBuffer(const std::vector<uint8_t>& archive_buffer, const TabEntry&
     }
 }
 
+void DecompressEntryBuffer(const std::vector<uint8_t>& buffer, const TabEntry& entry, std::vector<uint8_t>* out_buffer,
+                           const std::vector<TabCompressedBlock>& compression_blocks)
+{
+    if (buffer.empty()) {
+        throw std::invalid_argument("input buffer can't be empty!");
+    }
+
+    if (!out_buffer) {
+        throw std::invalid_argument("output buffer vector can't be nullptr!");
+    }
+
+    if (entry.m_CompressedBlockIndex != 0 && compression_blocks.empty()) {
+        throw std::invalid_argument("entry uses compression blocks, but none were passed.");
+    }
+
+    // read the entry buffer from the input buffer
+    switch (entry.m_Library) {
+        case E_COMPRESS_LIBRARY_NONE: {
+            assert(entry.m_Size != 0);
+            out_buffer->resize(entry.m_Size);
+
+            // copy the buffer from the input buffer
+            std::memcpy(out_buffer->data(), buffer.data(), entry.m_Size);
+            break;
+        }
+
+        case E_COMPRESS_LIBRARY_ZLIB: {
+#ifdef _DEBUG
+            __debugbreak();
+#endif
+            throw std::runtime_error("Zlib Decompression not implemented!");
+            break;
+        }
+
+        case E_COMPRESS_LIBRARY_OODLE: {
+            // entry is not using compression blocks
+            if (entry.m_CompressedBlockIndex == 0) {
+                // copy the compressed buffer from the arc input buffer
+                std::vector<uint8_t> compressed_data(entry.m_Size);
+                std::memcpy(compressed_data.data(), buffer.data(), entry.m_Size);
+
+                assert(entry.m_Size != entry.m_UncompressedSize);
+
+                // uncompress the buffer
+                out_buffer->resize(entry.m_UncompressedSize);
+                const int64_t size = ava::Oodle::Decompress(compressed_data.data(), entry.m_Size, out_buffer->data(),
+                                                            entry.m_UncompressedSize);
+
+                // ensure the decompressed amount what we expected
+                if (size != entry.m_UncompressedSize) {
+#ifdef _DEBUG
+                    __debugbreak();
+#endif
+                    out_buffer->clear();
+                    throw std::runtime_error("CompressionType_Oodle: Failed to decompress the buffer.");
+                }
+            }
+            // entry is using compression blocks
+            else {
+                out_buffer->resize(entry.m_UncompressedSize);
+
+                uint16_t current_block_index     = entry.m_CompressedBlockIndex;
+                uint32_t archive_buffer_offset   = 0;
+                uint32_t total_compressed_size   = entry.m_Size;
+                uint32_t total_uncompressed_size = 0;
+
+                while (total_compressed_size > 0) {
+                    const TabCompressedBlock& block = compression_blocks.at(current_block_index);
+
+                    // read the compressed block
+                    std::vector<uint8_t> block_data(block.m_CompressedSize);
+                    std::memcpy(block_data.data(), buffer.data() + archive_buffer_offset, block.m_CompressedSize);
+
+                    // decompress the block data
+                    const int64_t size =
+                        ava::Oodle::Decompress(block_data.data(), block.m_CompressedSize,
+                                               out_buffer->data() + total_uncompressed_size, block.m_UncompressedSize);
+                    if (size != block.m_UncompressedSize) {
+#ifdef _DEBUG
+                        __debugbreak();
+#endif
+                        out_buffer->clear();
+                        throw std::runtime_error("CompressionType_Oodle: Failed to decompress block buffer");
+                    }
+
+                    total_compressed_size -= block.m_CompressedSize;
+                    total_uncompressed_size += block.m_UncompressedSize;
+                    archive_buffer_offset += block.m_CompressedSize;
+                    current_block_index++;
+                }
+            }
+
+            break;
+        }
+    }
+} // namespace ava::ArchiveTable
+
+uint32_t GetEntryRequiredBufferSize(const TabEntry& entry, const std::vector<TabCompressedBlock>& compression_blocks)
+{
+    if (entry.m_Library == E_COMPRESS_LIBRARY_OODLE && entry.m_CompressedBlockIndex != 0) {
+        uint16_t current_block_index   = entry.m_CompressedBlockIndex;
+        uint32_t total_compressed_size = entry.m_Size;
+        uint32_t t                     = entry.m_Size;
+
+        while (t > 0) {
+            const TabCompressedBlock& block = compression_blocks.at(current_block_index);
+
+            t -= block.m_CompressedSize;
+            total_compressed_size += block.m_CompressedSize;
+            ++current_block_index;
+        }
+
+        return total_compressed_size;
+    }
+
+    return entry.m_Size;
+}
+
 void WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer, const std::string& filename,
                 const std::vector<uint8_t>& file_buffer, ECompressLibrary compression)
 {
@@ -192,7 +310,7 @@ void WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_
     }
 
     TabEntry entry{};
-    entry.m_NameHash             = hashlittle(filename.c_str());
+    entry.m_NameHash             = ava::hashlittle(filename.c_str());
     entry.m_Offset               = static_cast<uint32_t>(out_arc_buffer->size());
     entry.m_Size                 = static_cast<uint32_t>(file_buffer.size());
     entry.m_UncompressedSize     = entry.m_Size;

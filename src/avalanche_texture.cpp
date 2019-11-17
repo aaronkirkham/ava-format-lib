@@ -125,7 +125,7 @@ void WriteEntry(std::vector<uint8_t>* buffer, const TextureEntry& entry, const s
     // @TODO
 }
 
-uint8_t FindBestStream(const AvtxHeader& header, bool only_source)
+uint8_t FindBestStream(const AvtxHeader& header, uint8_t source)
 {
     uint8_t biggest      = 0;
     uint8_t stream_index = 0;
@@ -136,7 +136,7 @@ uint8_t FindBestStream(const AvtxHeader& header, bool only_source)
             continue;
         }
 
-        if ((stream.m_Source == only_source) || (!stream.m_Source && stream.m_Size > biggest)) {
+        if ((stream.m_Source == source) || (!stream.m_Source && stream.m_Size > biggest)) {
             biggest      = stream.m_Size;
             stream_index = i;
         }

@@ -25,14 +25,14 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const uint32_t name_hash, std
         stream.read((char*)&entry, sizeof(ResourceEntry));
 
         // copy the file buffer
-        if (entry.path_hash == name_hash) {
-            out_buffer->resize(entry.file_size);
-            stream.read((char*)out_buffer->data(), entry.file_size);
+        if (entry.m_NameHash == name_hash) {
+            out_buffer->resize(entry.m_Size);
+            stream.read((char*)out_buffer->data(), entry.m_Size);
             break;
         }
 
         // skip the current file buffer and get to the next entry
-        stream.ignore(entry.file_size);
+        stream.ignore(entry.m_Size);
     }
 }
 
@@ -54,9 +54,9 @@ void WriteEntry(std::vector<uint8_t>* out_buffer, const std::filesystem::path& f
     byte_vector_writer buf(out_buffer);
 
     ResourceEntry entry{};
-    entry.path_hash      = hashlittle(filename.string().c_str());
-    entry.extension_hash = hashlittle(filename.extension().string().c_str());
-    entry.file_size      = static_cast<uint32_t>(file_buffer.size());
+    entry.m_NameHash      = ava::hashlittle(filename.string().c_str());
+    entry.m_ExtensionHash = ava::hashlittle(filename.extension().string().c_str());
+    entry.m_Size          = static_cast<uint32_t>(file_buffer.size());
 
     buf.write((char*)&entry, sizeof(ResourceEntry));
     std::copy(file_buffer.begin(), file_buffer.end(), std::back_inserter(*out_buffer));

@@ -42,6 +42,17 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_en
 void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_entries);
 
 /**
+ * Parse a patched SARC file list and ..., commonly used with the .TOC extension
+ *
+ * @param buffer Input buffer containing a raw TOC file buffer
+ * @param entries Pointer to vector of ArchiveEntry's where the entries will be modified/written
+ * @param out_total_added (Optional) Pointer to a uint32_t where a total number of added entrys will be written
+ * @param out_total_patched (Optional) Pointer to a uint32_t where a total number of patched entrys will be written
+ */
+void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* entries,
+              uint32_t* out_total_added = nullptr, uint32_t* out_total_patched = nullptr);
+
+/**
  * Init an empty buffer with a SARC header
  *
  * @param buffer Pointer to an empty input buffer
@@ -79,4 +90,12 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEntr
  */
 void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries, const std::string& filename,
                 const std::vector<uint8_t>& file_buffer);
+
+/**
+ * Write a TOC file
+ *
+ * @param buffer Pointer to byte vector where the TOC buffer will be written
+ * @param entries Vector of archive entries to write to the TOC
+ */
+void WriteTOC(std::vector<uint8_t>* buffer, const std::vector<ArchiveEntry>& entries);
 }; // namespace ava::StreamArchive

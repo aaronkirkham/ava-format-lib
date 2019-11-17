@@ -9,6 +9,8 @@
 #include <endian.h>
 #endif
 
+namespace ava
+{
 #if (defined(__BYTE_ORDER) && defined(__LITTLE_ENDIAN) && __BYTE_ORDER == __LITTLE_ENDIAN)                             \
     || (defined(i386) || defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__)              \
         || defined(vax) || defined(MIPSEL))
@@ -25,46 +27,46 @@
 
 #define hashsize(n) ((uint32_t)1 << (n))
 #define hashmask(n) (hashsize(n) - 1)
-#define rot(x, k) (((x) << (k)) | ((x) >> (32 - (k))))
+#define hash_rot(x, k) (((x) << (k)) | ((x) >> (32 - (k))))
 
-#define mix(a, b, c)                                                                                                   \
+#define hash_mix(a, b, c)                                                                                              \
     {                                                                                                                  \
         a -= c;                                                                                                        \
-        a ^= rot(c, 4);                                                                                                \
+        a ^= hash_rot(c, 4);                                                                                           \
         c += b;                                                                                                        \
         b -= a;                                                                                                        \
-        b ^= rot(a, 6);                                                                                                \
+        b ^= hash_rot(a, 6);                                                                                           \
         a += c;                                                                                                        \
         c -= b;                                                                                                        \
-        c ^= rot(b, 8);                                                                                                \
+        c ^= hash_rot(b, 8);                                                                                           \
         b += a;                                                                                                        \
         a -= c;                                                                                                        \
-        a ^= rot(c, 16);                                                                                               \
+        a ^= hash_rot(c, 16);                                                                                          \
         c += b;                                                                                                        \
         b -= a;                                                                                                        \
-        b ^= rot(a, 19);                                                                                               \
+        b ^= hash_rot(a, 19);                                                                                          \
         a += c;                                                                                                        \
         c -= b;                                                                                                        \
-        c ^= rot(b, 4);                                                                                                \
+        c ^= hash_rot(b, 4);                                                                                           \
         b += a;                                                                                                        \
     }
 
-#define final(a, b, c)                                                                                                 \
+#define hash_final(a, b, c)                                                                                            \
     {                                                                                                                  \
         c ^= b;                                                                                                        \
-        c -= rot(b, 14);                                                                                               \
+        c -= hash_rot(b, 14);                                                                                          \
         a ^= c;                                                                                                        \
-        a -= rot(c, 11);                                                                                               \
+        a -= hash_rot(c, 11);                                                                                          \
         b ^= a;                                                                                                        \
-        b -= rot(a, 25);                                                                                               \
+        b -= hash_rot(a, 25);                                                                                          \
         c ^= b;                                                                                                        \
-        c -= rot(b, 16);                                                                                               \
+        c -= hash_rot(b, 16);                                                                                          \
         a ^= c;                                                                                                        \
-        a -= rot(c, 4);                                                                                                \
+        a -= hash_rot(c, 4);                                                                                           \
         b ^= a;                                                                                                        \
-        b -= rot(a, 14);                                                                                               \
+        b -= hash_rot(a, 14);                                                                                          \
         c ^= b;                                                                                                        \
-        c -= rot(b, 24);                                                                                               \
+        c -= hash_rot(b, 24);                                                                                          \
     }
 
 inline uint32_t hashlittle(const char *key, size_t length)
@@ -88,7 +90,7 @@ inline uint32_t hashlittle(const char *key, size_t length)
             a += k[0];
             b += k[1];
             c += k[2];
-            mix(a, b, c);
+            hash_mix(a, b, c);
             length -= 12;
             k += 3;
         }
@@ -207,7 +209,7 @@ inline uint32_t hashlittle(const char *key, size_t length)
             a += k[0] + (((uint32_t)k[1]) << 16);
             b += k[2] + (((uint32_t)k[3]) << 16);
             c += k[4] + (((uint32_t)k[5]) << 16);
-            mix(a, b, c);
+            hash_mix(a, b, c);
             length -= 12;
             k += 6;
         }
@@ -273,7 +275,7 @@ inline uint32_t hashlittle(const char *key, size_t length)
             c += ((uint32_t)k[9]) << 8;
             c += ((uint32_t)k[10]) << 16;
             c += ((uint32_t)k[11]) << 24;
-            mix(a, b, c);
+            hash_mix(a, b, c);
             length -= 12;
             k += 12;
         }
@@ -311,7 +313,7 @@ inline uint32_t hashlittle(const char *key, size_t length)
         }
     }
 
-    final(a, b, c);
+    hash_final(a, b, c);
     return c;
 }
 
@@ -319,16 +321,17 @@ inline uint32_t hashlittle(const char *key)
 {
     return hashlittle(key, strlen(key));
 }
+}; // namespace ava
 
 struct basic_hash_little {
     std::uint32_t operator()(std::string const &text) const
     {
-        return hashlittle(text.c_str());
+        return ava::hashlittle(text.c_str());
     }
 
     static inline uint32_t hash(const char *const aString)
     {
-        return hashlittle(aString);
+        return ava::hashlittle(aString);
     };
 };
 

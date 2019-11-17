@@ -96,7 +96,7 @@ void WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_
     }
 
     TabEntry entry{};
-    entry.m_NameHash = hashlittle(filename.c_str());
+    entry.m_NameHash = ava::hashlittle(filename.c_str());
     entry.m_Offset   = static_cast<uint32_t>(out_arc_buffer->size());
     entry.m_Size     = static_cast<uint32_t>(file_buffer.size());
 

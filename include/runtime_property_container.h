@@ -27,8 +27,8 @@ enum EVariantType : uint8_t {
 
 #pragma pack(push, 1)
 struct RtpcHeader {
-    uint32_t m_Magic;
-    uint32_t m_Version;
+    uint32_t m_Magic   = RTPC_MAGIC;
+    uint32_t m_Version = 1;
 };
 
 struct RtpcContainer {
@@ -49,6 +49,7 @@ static_assert(sizeof(RtpcHeader) == 0x8, "RtpcHeader alignment is wrong!");
 static_assert(sizeof(RtpcContainer) == 0xC, "RtpcContainer alignment is wrong!");
 static_assert(sizeof(RtpcContainerVariant) == 0x9, "RtpcContainerVariant alignment is wrong!");
 
+#if 0
 class RuntimeContainer
 {
   private:
@@ -61,4 +62,5 @@ class RuntimeContainer
     void GetContainer(const uint32_t key);
     void GetVariant(const uint32_t key);
 };
+#endif
 }; // namespace ava::RuntimePropertyContainer

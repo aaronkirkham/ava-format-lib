@@ -106,7 +106,7 @@ struct RbmHeader {
     float    m_BoundingBoxMin[3] = {0};
     float    m_BoundingBoxMax[3] = {0};
     uint32_t m_NumberOfBlocks    = 0;
-    uint32_t m_Flags             = 0;
+    uint32_t m_Tag               = 8;
 };
 #pragma pack(pop)
 

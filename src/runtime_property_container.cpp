@@ -5,6 +5,7 @@
 
 namespace ava::RuntimePropertyContainer
 {
+#if 0
 RuntimeContainer::RuntimeContainer(const std::vector<uint8_t>& buffer)
 {
     if (buffer.empty()) {
@@ -43,4 +44,5 @@ void RuntimeContainer::GetVariant(const uint32_t key)
 {
     //
 }
+#endif
 }; // namespace ava::RuntimePropertyContainer

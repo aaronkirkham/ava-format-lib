@@ -69,7 +69,7 @@ void ADF::AddBuiltInType(EAdfType type, EAdfScalarType scalar_type, uint32_t siz
     char type_name[64];
     snprintf(type_name, sizeof(type_name), "%s%u%u%u", name, (uint32_t)type, size, size);
 
-    uint32_t type_hash = hashlittle(type_name);
+    uint32_t type_hash = ava::hashlittle(type_name);
     uint32_t alignment = size;
 
     if (type == ADF_TYPE_DEFERRED) {
