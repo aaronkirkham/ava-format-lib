@@ -5,7 +5,8 @@
 
 namespace ava::RuntimePropertyContainer
 {
-static constexpr uint32_t RTPC_MAGIC = 0x43505452; // RTPC
+static constexpr uint32_t RTPC_MAGIC        = 0x43505452; // RTPC
+static constexpr uint32_t RTPC_PADDING_BYTE = 0x50;
 
 enum EVariantType : uint8_t {
     T_VARIANT_UNASSIGNED    = 0x0,

@@ -236,6 +236,18 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const ArchiveEntry& entry, st
 void ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEntry>& entries,
                const std::string& filename, std::vector<uint8_t>* out_buffer)
 {
+    if (buffer.empty()) {
+        throw std::runtime_error("input buffer can't be empty!");
+    }
+
+    if (entries.empty()) {
+        throw std::runtime_error("input entries can't be empty!");
+    }
+
+    if (!out_buffer) {
+        throw std::runtime_error("output buffer can't be nullptr!");
+    }
+
     const auto it = std::find_if(entries.begin(), entries.end(),
                                  [filename](const ArchiveEntry& entry) { return entry.m_Filename == filename; });
     if (it != entries.end()) {
@@ -381,6 +393,14 @@ void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries
 
 void WriteTOC(std::vector<uint8_t>* buffer, const std::vector<ArchiveEntry>& entries)
 {
+    if (!buffer) {
+        throw std::runtime_error("input buffer can't be nullptr!");
+    }
+
+    if (entries.empty()) {
+        throw std::runtime_error("input entries can't be empty!");
+    }
+
     byte_vector_writer buf(buffer);
 
     for (const auto& entry : entries) {
