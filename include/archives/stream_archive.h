@@ -42,7 +42,7 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_en
 void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_entries);
 
 /**
- * Parse a patched SARC file list and ..., commonly used with the .TOC extension
+ * Parse a patched SARC file list and update current entries vector, commonly used with the .TOC extension
  *
  * @param buffer Input buffer containing a raw TOC file buffer
  * @param entries Pointer to vector of ArchiveEntry's where the entries will be modified/written
@@ -50,7 +50,7 @@ void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out
  * @param out_total_patched (Optional) Pointer to a uint32_t where a total number of patched entrys will be written
  */
 void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* entries,
-              uint32_t* out_total_added = nullptr, uint32_t* out_total_patched = nullptr);
+              uint32_t* out_total_added, uint32_t* out_total_patched);
 
 /**
  * Init an empty buffer with a SARC header

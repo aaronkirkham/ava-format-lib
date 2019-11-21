@@ -21,7 +21,7 @@ struct AafHeader {
 
     AafHeader()
     {
-        strncpy_s(m_Magic2, 29, "AVALANCHEARCHIVEFORMATISCOOL", 29);
+        memcpy(m_Magic2, "AVALANCHEARCHIVEFORMATISCOOL", 28);
     }
 };
 

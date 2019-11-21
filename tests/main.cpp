@@ -68,16 +68,16 @@ TEST_CASE("Archive Table Format", "[AvaFormatLib][TAB]")
         std::vector<TabEntry> entries;
         REQUIRE_NOTHROW(Parse(tab_buffer, &entries));
         REQUIRE_FALSE(entries.empty());
-        REQUIRE(entries[0].m_NameHash == hashlittle("hello.bin"));
+        REQUIRE(entries[0].m_NameHash == ava::hashlittle("hello.bin"));
     }
 
     SECTION("can read entries")
     {
         TabEntry entry{};
-        REQUIRE_NOTHROW(ReadEntry(tab_buffer, hashlittle("world.bin"), &entry));
+        REQUIRE_NOTHROW(ReadEntry(tab_buffer, ava::hashlittle("world.bin"), &entry));
 
         std::vector<uint8_t> file_buffer;
-        REQUIRE_NOTHROW(ReadEntryBuffer(arc_buffer, entry, &file_buffer, nullptr));
+        REQUIRE_NOTHROW(ReadEntryBuffer(arc_buffer, entry, &file_buffer));
         REQUIRE(FilesAreTheSame(file_buffer, world_buffer));
     }
 
@@ -117,13 +117,13 @@ TEST_CASE("Archive Table Format (LEGACY)", "[AvaFormatLib][TAB]")
         std::vector<TabEntry> entries;
         REQUIRE_NOTHROW(Parse(tab_buffer, &entries));
         REQUIRE_FALSE(entries.empty());
-        REQUIRE(entries[0].m_NameHash == hashlittle("hello.bin"));
+        REQUIRE(entries[0].m_NameHash == ava::hashlittle("hello.bin"));
     }
 
     SECTION("can read entries")
     {
         TabEntry entry{};
-        REQUIRE_NOTHROW(ReadEntry(tab_buffer, hashlittle("world.bin"), &entry));
+        REQUIRE_NOTHROW(ReadEntry(tab_buffer, ava::hashlittle("world.bin"), &entry));
 
         std::vector<uint8_t> file_buffer;
         REQUIRE_NOTHROW(ReadEntryBuffer(arc_buffer, entry, &file_buffer));
@@ -305,7 +305,7 @@ TEST_CASE("Resource Bundle", "[AvaFormatLib][ResourceBundle]")
     SECTION("can read entries")
     {
         std::vector<uint8_t> out_buffer;
-        REQUIRE_NOTHROW(ReadEntry(buffer, hashlittle("world.bin"), &out_buffer));
+        REQUIRE_NOTHROW(ReadEntry(buffer, ava::hashlittle("world.bin"), &out_buffer));
 
         REQUIRE(FilesAreTheSame(out_buffer, world_buffer));
     }
@@ -320,6 +320,7 @@ TEST_CASE("Resource Bundle", "[AvaFormatLib][ResourceBundle]")
     }
 }
 
+#if 0
 TEST_CASE("Runtime Property Container", "[AvaFormatLib][RTPC]")
 {
     using namespace ava::RuntimePropertyContainer;
@@ -342,6 +343,7 @@ TEST_CASE("Runtime Property Container", "[AvaFormatLib][RTPC]")
         RuntimeContainer rtpc(buffer);
     }
 }
+#endif
 
 TEST_CASE("Avalanche Data Format", "[AvaFormatLib][ADF]")
 {

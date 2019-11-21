@@ -75,16 +75,19 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const uint32_t name_hash, Tab
  * @param archive_buffer Input buffer containing a raw ARC file buffer
  * @param entry Entry to read from the ARC file buffer
  * @param out_buffer Pointer to a byte vector where the entry file buffer will be written
- * @param compression_blocks (Optional) Pointer to a vector of TabCompressedBlocks (only required if
- * entry.m_CompressedBlockIndex != 0)
+ * @param compression_blocks (Optional) Vector of TabCompressedBlocks (required if entry.m_CompressedBlockIndex != 0)
  */
 void ReadEntryBuffer(const std::vector<uint8_t>& archive_buffer, const TabEntry& entry,
-                     std::vector<uint8_t>*                  out_buffer,
-                     const std::vector<TabCompressedBlock>* compression_blocks = nullptr);
+                     std::vector<uint8_t>* out_buffer, const std::vector<TabCompressedBlock>& compression_blocks = {});
 
 /**
- * xxxxxx
+ * Decompress an entries buffer, similiar to ReadEntryBuffer, but requires the input buffer to only be the entry buffer
+ * and not the archive buffer. This means we don't have to keep a whole copy of an archive file in memory.
  *
+ * @param buffer Input buffer containing a raw entry file buffer
+ * @param entry Entry whose buffer this belongs to
+ * @param out_buffer Pointer to a byte vector where the decompressed entry file buffer will be written
+ * @param compression_blocks (Optional) Vector of TabCompressedBlocks (required if entry.m_CompressedBlockIndex != 0)
  */
 void DecompressEntryBuffer(const std::vector<uint8_t>& buffer, const TabEntry& entry, std::vector<uint8_t>* out_buffer,
                            const std::vector<TabCompressedBlock>& compression_blocks = {});
