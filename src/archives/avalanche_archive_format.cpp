@@ -106,6 +106,7 @@ void Decompress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_bu
     out_buffer->reserve(header.m_TotalUnpackedSize);
 
     // read all the chunks
+    uint32_t buffer_offset = 0;
     for (uint32_t i = 0; i < header.m_NumChunks; ++i) {
         const auto start_pos = stream.tellg();
 

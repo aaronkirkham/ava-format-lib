@@ -50,6 +50,7 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_en
 
                 ArchiveEntry entry{};
                 entry.m_Filename = filename.get();
+                entry.m_NameHash = ava::hashlittle(entry.m_Filename.c_str());
                 stream.read((char*)&entry.m_Offset, sizeof(entry.m_Offset));
                 stream.read((char*)&entry.m_Size, sizeof(entry.m_Size));
                 out_entries->emplace_back(std::move(entry));
@@ -93,6 +94,7 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_en
 
                 ArchiveEntry entry{};
                 entry.m_Filename = filenames[name_hash];
+                entry.m_NameHash = name_hash;
                 entry.m_Offset   = file_offset;
                 entry.m_Size     = uncompressed_size;
                 out_entries->emplace_back(std::move(entry));
@@ -133,6 +135,7 @@ void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out
         // read archive entry
         ArchiveEntry entry{};
         entry.m_Filename = filename.get();
+        entry.m_NameHash = ava::hashlittle(entry.m_Filename.c_str());
         stream.read((char*)&entry.m_Offset, sizeof(entry.m_Offset));
         stream.read((char*)&entry.m_Size, sizeof(entry.m_Size));
         out_entries->emplace_back(std::move(entry));
@@ -169,11 +172,12 @@ void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* ent
         // read archive entry
         ArchiveEntry entry{};
         entry.m_Filename = filename.get();
+        entry.m_NameHash = ava::hashlittle(entry.m_Filename.c_str());
         stream.read((char*)&entry.m_Offset, sizeof(entry.m_Offset));
         stream.read((char*)&entry.m_Size, sizeof(entry.m_Size));
 
         const auto it = std::find_if(entries->begin(), entries->end(),
-                                     [&](const ArchiveEntry& item) { return item.m_Filename == entry.m_Filename; });
+                                     [&](const ArchiveEntry& item) { return item.m_NameHash == entry.m_NameHash; });
         if (it == entries->end()) {
             entries->emplace_back(std::move(entry));
             ++total_added;
@@ -248,8 +252,11 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEntr
         throw std::runtime_error("output buffer can't be nullptr!");
     }
 
-    const auto it = std::find_if(entries.begin(), entries.end(),
-                                 [filename](const ArchiveEntry& entry) { return entry.m_Filename == filename; });
+    const uint32_t filename_hash = ava::hashlittle(filename.c_str());
+    const auto     it = std::find_if(entries.begin(), entries.end(), [filename_hash](const ArchiveEntry& entry) {
+        return entry.m_NameHash == filename_hash;
+    });
+
     if (it != entries.end()) {
         const ArchiveEntry& entry = (*it);
 
@@ -285,14 +292,18 @@ void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries
     std::vector<uint8_t> temp_buffer;
     byte_vector_writer   tbuf(&temp_buffer);
 
+    const uint32_t filename_hash = ava::hashlittle(filename.c_str());
+
     ArchiveEntry* entry = nullptr;
-    const auto    it    = std::find_if(entries->begin(), entries->end(),
-                                 [filename](const ArchiveEntry& item) { return item.m_Filename == filename; });
+    const auto    it    = std::find_if(entries->begin(), entries->end(), [filename_hash](const ArchiveEntry& item) {
+        return item.m_NameHash == filename_hash;
+    });
 
     // file currently does not exist in the archive, add a new entry
     if (it == entries->end()) {
         ArchiveEntry e{};
         e.m_Filename = filename;
+        e.m_NameHash = filename_hash;
         e.m_Offset   = 1; // @NOTE: offset will be updated later, just make sure this is >0
         e.m_Size     = static_cast<uint32_t>(file_buffer.size());
         entries->emplace_back(std::move(e));
@@ -345,7 +356,7 @@ void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries
                 // don't update offsets of patched files
                 if (data_offset != 0) {
                     // if the current entry is the file we added, copy the buffer from the input file buffer
-                    if (entry.m_Filename == filename) {
+                    if (entry.m_NameHash == filename_hash) {
                         std::memcpy(&temp_buffer[data_offset], file_buffer.data(), file_buffer.size());
                     } else {
                         std::memcpy(&temp_buffer[data_offset], &(*buffer)[entry.m_Offset], entry.m_Size);

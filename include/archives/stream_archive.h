@@ -19,6 +19,7 @@ struct SarcHeader {
 
 struct ArchiveEntry {
     std::string m_Filename = "";
+    uint32_t    m_NameHash = 0;
     uint32_t    m_Offset   = 0;
     uint32_t    m_Size     = 0;
 };
@@ -49,8 +50,8 @@ void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out
  * @param out_total_added (Optional) Pointer to a uint32_t where a total number of added entrys will be written
  * @param out_total_patched (Optional) Pointer to a uint32_t where a total number of patched entrys will be written
  */
-void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* entries,
-              uint32_t* out_total_added, uint32_t* out_total_patched);
+void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* entries, uint32_t* out_total_added,
+              uint32_t* out_total_patched);
 
 /**
  * Init an empty buffer with a SARC header
