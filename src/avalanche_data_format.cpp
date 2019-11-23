@@ -27,6 +27,12 @@ void ParseHeader(const std::vector<uint8_t>& buffer, AdfHeader* out_header, cons
     }
 }
 
+ADF::ADF()
+{
+    // add built in primitive types
+    AddBuiltInTypes();
+}
+
 ADF::ADF(const std::vector<uint8_t>& buffer)
     : m_Header((AdfHeader*)buffer.data())
     , m_Buffer(buffer)
@@ -40,18 +46,7 @@ ADF::ADF(const std::vector<uint8_t>& buffer)
     }
 
     // add built in primitive types
-    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_UNSIGNED, sizeof(uint8_t), "uint8");
-    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_SIGNED, sizeof(int8_t), "int8");
-    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_UNSIGNED, sizeof(uint16_t), "uint16");
-    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_SIGNED, sizeof(int16_t), "int16");
-    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_UNSIGNED, sizeof(uint32_t), "uint32");
-    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_SIGNED, sizeof(int32_t), "int32");
-    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_UNSIGNED, sizeof(uint64_t), "uint64");
-    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_SIGNED, sizeof(int64_t), "int64");
-    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_FLOAT, sizeof(float), "float");
-    AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_FLOAT, sizeof(double), "double");
-    AddBuiltInType(ADF_TYPE_STRING, ADF_SCALARTYPE_SIGNED, 8, "String", 0);
-    AddBuiltInType(ADF_TYPE_DEFERRED, ADF_SCALARTYPE_SIGNED, 16, "void", 0);
+    AddBuiltInTypes();
 
     // add internal types from this buffer
     AddTypes(buffer);
@@ -221,6 +216,10 @@ void ADF::AddTypes(const std::vector<uint8_t>& buffer)
 
         // copy the type and its members
         auto type = (AdfType*)std::malloc(size);
+        if (!type) {
+            throw std::runtime_error("ADF can't allocate enough space for type");
+        }
+
         std::memcpy(type, current, size);
 
         // reindex the type name
@@ -298,6 +297,10 @@ void ADF::ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instan
 
     // alloc the memory for the result
     auto mem = std::malloc(current_instance->m_PayloadSize);
+    if (!mem) {
+        throw std::runtime_error("ADF can't allocate enough space for instance payload");
+    }
+
     std::memcpy(mem, payload, current_instance->m_PayloadSize);
 
     bool has_32bit_inline_arrays = ~LOBYTE(m_Header->m_Flags) & E_ADF_HEADER_FLAG_RELATIVE_OFFSETS_EXISTS;

@@ -178,14 +178,31 @@ void ParseHeader(const std::vector<uint8_t>& buffer, AdfHeader* out_header, cons
 
 class ADF
 {
-  private:
+  protected:
     std::vector<uint8_t>            m_Buffer;
     AdfHeader*                      m_Header;
     std::vector<AdfType*>           m_Types;
     std::vector<std::string>        m_Strings;
     std::map<uint32_t, std::string> m_StringHashes;
 
+  private:
     void AddBuiltInType(EAdfType type, EAdfScalarType scalar_type, uint32_t size, const char* name, uint16_t flags = 3);
+    void AddBuiltInTypes()
+    {
+        // primitive types
+        AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_UNSIGNED, sizeof(uint8_t), "uint8");
+        AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_SIGNED, sizeof(int8_t), "int8");
+        AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_UNSIGNED, sizeof(uint16_t), "uint16");
+        AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_SIGNED, sizeof(int16_t), "int16");
+        AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_UNSIGNED, sizeof(uint32_t), "uint32");
+        AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_SIGNED, sizeof(int32_t), "int32");
+        AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_UNSIGNED, sizeof(uint64_t), "uint64");
+        AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_SIGNED, sizeof(int64_t), "int64");
+        AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_FLOAT, sizeof(float), "float");
+        AddBuiltInType(ADF_TYPE_SCALAR, ADF_SCALARTYPE_FLOAT, sizeof(double), "double");
+        AddBuiltInType(ADF_TYPE_STRING, ADF_SCALARTYPE_SIGNED, 8, "String", 0);
+        AddBuiltInType(ADF_TYPE_DEFERRED, ADF_SCALARTYPE_SIGNED, 16, "void", 0);
+    }
     void LoadInlineOffsets(const AdfType* type, char* payload, const uint32_t offset = 0);
 
     const char* GetString(uint64_t index, const AdfHeader* header, const std::vector<uint8_t>& buffer)
@@ -211,6 +228,7 @@ class ADF
     }
 
   public:
+    ADF();
     ADF(const std::vector<uint8_t>& buffer);
     virtual ~ADF();
 
