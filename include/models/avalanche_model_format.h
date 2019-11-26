@@ -169,4 +169,6 @@ static_assert(sizeof(SAmfMeshBuffers) == 0x28, "SAmfMeshBuffers alignment is wro
 void ParseModelc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::ADF** out_adf, SAmfModel** out_model);
 void ParseMeshc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::ADF** out_adf,
                 SAmfMeshHeader** out_mesh_header, SAmfMeshBuffers** out_mesh_buffer);
+void ParseHrmeshc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::ADF** out_adf,
+                  SAmfMeshBuffers** out_mesh_buffer);
 }; // namespace ava::AvalancheModelFormat

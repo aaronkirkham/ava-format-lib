@@ -247,7 +247,7 @@ AdfType* ADF::FindType(const uint32_t type_hash)
     return (it != m_Types.end() ? *it : nullptr);
 }
 
-void ADF::GetInstance(uint32_t index, SInstanceInfo* out_instance_info)
+bool ADF::GetInstance(uint32_t index, SInstanceInfo* out_instance_info)
 {
     if (!out_instance_info) {
         throw std::invalid_argument("ADF GetInstance output instance can't be nullptr!");
@@ -256,25 +256,27 @@ void ADF::GetInstance(uint32_t index, SInstanceInfo* out_instance_info)
     const AdfInstance* instance =
         (AdfInstance*)&m_Buffer[m_Header->m_FirstInstanceOffset + (sizeof(AdfInstance) * index)];
     if (!instance) {
-        throw std::runtime_error("ADF instance was nullptr! (invalid instance index?)");
+        // throw std::runtime_error("ADF instance was nullptr! (invalid instance index?)");
+        return false;
     }
 
-    out_instance_info->m_NameHash = instance->m_NameHash;
-    out_instance_info->m_TypeHash = instance->m_TypeHash;
-    out_instance_info->m_Name     = GetString(instance->m_Name, m_Header, m_Buffer);
-
-    const AdfType* type = FindType(instance->m_TypeHash);
-    if (type) {
-        out_instance_info->m_Instance     = &m_Buffer[instance->m_PayloadOffset];
-        out_instance_info->m_InstanceSize = instance->m_PayloadSize;
-        return;
-    }
-
+    out_instance_info->m_NameHash     = instance->m_NameHash;
+    out_instance_info->m_TypeHash     = instance->m_TypeHash;
+    out_instance_info->m_Name         = GetString(instance->m_Name, m_Header, m_Buffer);
     out_instance_info->m_Instance     = nullptr;
     out_instance_info->m_InstanceSize = 0;
+
+    const AdfType* type = FindType(instance->m_TypeHash);
+    if (!type) {
+        return false;
+    }
+
+    out_instance_info->m_Instance     = &m_Buffer[instance->m_PayloadOffset];
+    out_instance_info->m_InstanceSize = instance->m_PayloadSize;
+    return true;
 }
 
-void ADF::ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instance)
+bool ADF::ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instance)
 {
     // find the instance
     AdfInstance* current_instance = nullptr;
@@ -289,7 +291,7 @@ void ADF::ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instan
     }
 
     if (!current_instance) {
-        throw std::runtime_error("Can't find instance!");
+        return false;
     }
 
     const AdfType* type    = FindType(current_instance->m_TypeHash);
@@ -298,7 +300,8 @@ void ADF::ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instan
     // alloc the memory for the result
     auto mem = std::malloc(current_instance->m_PayloadSize);
     if (!mem) {
-        throw std::runtime_error("ADF can't allocate enough space for instance payload");
+        // throw std::runtime_error("ADF can't allocate enough space for instance payload");
+        return false;
     }
 
     std::memcpy(mem, payload, current_instance->m_PayloadSize);
@@ -324,10 +327,21 @@ void ADF::ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instan
     }
 
     *out_instance = mem;
+    return true;
 }
 
-void ADF::ReadInstance(const SInstanceInfo& instance_info, void** out_instance)
+bool ADF::ReadInstance(const SInstanceInfo& instance_info, void** out_instance)
 {
     return ReadInstance(instance_info.m_NameHash, instance_info.m_TypeHash, out_instance);
+}
+
+bool ADF::ReadInstance(uint32_t index, void** out_instance)
+{
+    SInstanceInfo instance_info{};
+    if (GetInstance(index, &instance_info) && instance_info.m_Instance) {
+        return ReadInstance(instance_info.m_NameHash, instance_info.m_TypeHash, out_instance);
+    }
+
+    return false;
 }
 }; // namespace ava::AvalancheDataFormat

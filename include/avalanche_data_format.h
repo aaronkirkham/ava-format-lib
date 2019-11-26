@@ -247,7 +247,7 @@ class ADF
      * @param index Index of the instance to read from the ADF buffer
      * @param out_instance_info Pointer to SInstanceInfo where the instance data will be written
      */
-    void GetInstance(uint32_t index, SInstanceInfo* out_instance_info);
+    bool GetInstance(uint32_t index, SInstanceInfo* out_instance_info);
 
     /**
      * Read an instance from an ADF buffer
@@ -256,7 +256,7 @@ class ADF
      * @param type_hash Type hash of the instance to read from the ADF buffer
      * @param out_instance Pointer to an instance where the data will be written
      */
-    void ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instance);
+    bool ReadInstance(uint32_t name_hash, uint32_t type_hash, void** out_instance);
 
     /**
      * Read an instance from an ADF buffer
@@ -264,7 +264,15 @@ class ADF
      * @param instance_info Instance info returned from GetInstance
      * @param out_instance Pointer to an instance where the data will be written
      */
-    void ReadInstance(const SInstanceInfo& instance_info, void** out_instance);
+    bool ReadInstance(const SInstanceInfo& instance_info, void** out_instance);
+
+    /**
+     * Read an instance from an ADF buffer
+     *
+     * @param index Index of the instance to read from the ADF buffer
+     * @param out_instance Pointer to an instance where the data will be written
+     */
+    bool ReadInstance(uint32_t index, void** out_instance);
 
     /**
      * Name hash lookup

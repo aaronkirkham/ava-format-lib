@@ -13,9 +13,7 @@ void ParseModelc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::A
     const auto adf = new ava::AvalancheDataFormat::ADF(buffer);
     *out_adf       = adf;
 
-    ava::AvalancheDataFormat::SInstanceInfo instance{};
-    adf->GetInstance(0, &instance);
-    adf->ReadInstance(instance, (void**)out_model);
+    adf->ReadInstance(0, (void**)out_model);
 }
 
 void ParseMeshc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::ADF** out_adf,
@@ -28,12 +26,20 @@ void ParseMeshc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::AD
     const auto adf = new ava::AvalancheDataFormat::ADF(buffer);
     *out_adf       = adf;
 
-    ava::AvalancheDataFormat::SInstanceInfo header_instance{};
-    adf->GetInstance(0, &header_instance);
-    adf->ReadInstance(header_instance, (void**)out_mesh_header);
+    adf->ReadInstance(0, (void**)out_mesh_header);
+    adf->ReadInstance(1, (void**)out_mesh_buffer);
+}
 
-    ava::AvalancheDataFormat::SInstanceInfo mesh_instance{};
-    adf->GetInstance(1, &mesh_instance);
-    adf->ReadInstance(mesh_instance, (void**)out_mesh_buffer);
+void ParseHrmeshc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::ADF** out_adf,
+                  SAmfMeshBuffers** out_mesh_buffer)
+{
+    if (buffer.empty()) {
+        throw std::invalid_argument("HRMESHC input buffer can't be empty!");
+    }
+
+    const auto adf = new ava::AvalancheDataFormat::ADF(buffer);
+    *out_adf       = adf;
+
+    adf->ReadInstance(0, (void**)out_mesh_buffer);
 }
 }; // namespace ava::AvalancheModelFormat
