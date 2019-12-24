@@ -14,6 +14,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+namespace ava
+{
+
 //-----------------------------------------------------------------------------
 // Platform-specific functions and macros
 
@@ -65,9 +68,7 @@ __forceinline uint64_t fmix64(uint64_t k)
 
 //-----------------------------------------------------------------------------
 
-namespace ava
-{
-void MurmurHash3_x86_32(const void *key, int len, uint32_t seed, void *out)
+static void MurmurHash3_x86_32(const void *key, int len, uint32_t seed, void *out)
 {
     const uint8_t *data    = (const uint8_t *)key;
     const int      nblocks = len / 4;
@@ -126,7 +127,7 @@ void MurmurHash3_x86_32(const void *key, int len, uint32_t seed, void *out)
 
 //-----------------------------------------------------------------------------
 
-void MurmurHash3_x86_128(const void *key, const int len, uint32_t seed, void *out)
+static void MurmurHash3_x86_128(const void *key, const int len, uint32_t seed, void *out)
 {
     const uint8_t *data    = (const uint8_t *)key;
     const int      nblocks = len / 16;
@@ -286,7 +287,7 @@ void MurmurHash3_x86_128(const void *key, const int len, uint32_t seed, void *ou
 
 //-----------------------------------------------------------------------------
 
-void MurmurHash3_x64_128(const void *key, const int len, const uint32_t seed, void *out)
+static void MurmurHash3_x64_128(const void *key, const int len, const uint32_t seed, void *out)
 {
     const uint8_t *data    = (const uint8_t *)key;
     const int      nblocks = len / 16;
@@ -394,14 +395,15 @@ void MurmurHash3_x64_128(const void *key, const int len, const uint32_t seed, vo
     ((uint64_t *)out)[1] = h2;
 }
 
-uint64_t HashString64(const char *str)
+inline uint64_t HashString64(const char *str)
 {
     uint64_t out[2];
     MurmurHash3_x64_128(str, strlen(str), 0, &out);
     return out[0];
 }
-}; // namespace ava
 
 //-----------------------------------------------------------------------------
+
+}; // namespace ava
 
 #endif

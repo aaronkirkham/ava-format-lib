@@ -22,7 +22,7 @@ enum ETextureFlag : uint32_t {
 struct AvtxStream {
     uint32_t m_Offset;
     uint32_t m_Size;
-    uint16_t m_Alignment;
+    uint16_t m_Alignment = 16;
     bool     m_TileMode;
     uint8_t  m_Source;
 };
@@ -32,11 +32,11 @@ struct AvtxHeader {
     uint8_t    m_Version = 1;
     uint8_t    m_Platform;
     uint8_t    m_Tag;
-    uint8_t    m_Dimension;
+    uint8_t    m_Dimension = 2;
     uint32_t   m_Format;
     uint16_t   m_Width;
     uint16_t   m_Height;
-    uint16_t   m_Depth;
+    uint16_t   m_Depth = 1;
     uint16_t   m_Flags;
     uint8_t    m_Mips;
     uint8_t    m_MipsRedisent;
