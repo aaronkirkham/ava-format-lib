@@ -6,6 +6,7 @@
 
 #include "util/hashlittle.h"
 #include "util/math.h"
+#include "util/murmur3.h"
 
 #include "archives/archive_table.h"
 #include "archives/avalanche_archive_format.h"
