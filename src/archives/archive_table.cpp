@@ -196,7 +196,7 @@ void DecompressEntryBuffer(const std::vector<uint8_t>& buffer, const TabEntry& e
             break;
         }
     }
-} // namespace ava::ArchiveTable
+}
 
 uint32_t GetEntryRequiredBufferSize(const TabEntry& entry, const std::vector<TabCompressedBlock>& compression_blocks)
 {
@@ -207,12 +207,12 @@ uint32_t GetEntryRequiredBufferSize(const TabEntry& entry, const std::vector<Tab
 
         uint16_t current_block_index   = entry.m_CompressedBlockIndex;
         uint32_t total_compressed_size = entry.m_Size;
-        uint32_t t                     = entry.m_Size;
+        uint32_t remaining             = entry.m_Size;
 
-        while (t > 0) {
+        while (remaining > 0) {
             const TabCompressedBlock& block = compression_blocks.at(current_block_index);
 
-            t -= block.m_CompressedSize;
+            remaining -= block.m_CompressedSize;
             total_compressed_size += block.m_CompressedSize;
             ++current_block_index;
         }

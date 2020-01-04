@@ -383,9 +383,10 @@ TEST_CASE("Avalanche Data Format", "[AvaFormatLib][ADF]")
     SECTION("invalid input argument throws std::invalid_argument")
     {
         REQUIRE_THROWS_AS(
-            []() {
+            [] {
                 // invalid input buffer
-                ADF adf({});
+                std::vector<uint8_t> buffer;
+                ADF                  adf(buffer);
             }(),
             std::invalid_argument);
     }

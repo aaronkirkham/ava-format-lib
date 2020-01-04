@@ -30,7 +30,7 @@ void Parse(const std::vector<uint8_t>& buffer, RBMHashHandler rbm_hash_handler)
     }
 
     // read render blocks
-    for (uint32_t i = 0; i < header.m_NumberOfBlocks; ++i) {
+    for (decltype(header.m_NumberOfBlocks) i = 0; i < header.m_NumberOfBlocks; ++i) {
         uint32_t hash;
         stream.read((char*)&hash, sizeof(uint32_t));
 

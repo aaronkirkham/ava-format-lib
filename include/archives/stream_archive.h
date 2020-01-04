@@ -35,7 +35,7 @@ static_assert(sizeof(SarcHeader) == 0x10, "SarcHeader alignment is wrong!");
 void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_entries);
 
 /**
- * Parse a patched SARC file list, commonly used with the .TOC extension
+ * Parse a Table of Contents file list, commonly used with the .ee.toc extension
  *
  * @param buffer Input buffer containing a raw TOC file buffer
  * @param out_entries Pointer to vector of ArchiveEntry's where the entries will be written
@@ -43,7 +43,7 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_en
 void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_entries);
 
 /**
- * Parse a patched SARC file list and update current entries vector, commonly used with the .TOC extension
+ * Parse a Table of Contents file list and update current entries vector, commonly used with the .ee.toc extension
  *
  * @param buffer Input buffer containing a raw TOC file buffer
  * @param entries Pointer to vector of ArchiveEntry's where the entries will be modified/written

@@ -180,7 +180,7 @@ class ADF
 {
   protected:
     std::vector<uint8_t>            m_Buffer;
-    AdfHeader*                      m_Header;
+    AdfHeader*                      m_Header = nullptr;
     std::vector<AdfType*>           m_Types;
     std::vector<std::string>        m_Strings;
     std::map<uint32_t, std::string> m_StringHashes;
