@@ -17,14 +17,14 @@ struct SarcHeader {
 };
 #pragma pack(pop)
 
+static_assert(sizeof(SarcHeader) == 0x10, "SarcHeader alignment is wrong!");
+
 struct ArchiveEntry {
     std::string m_Filename = "";
     uint32_t    m_NameHash = 0;
     uint32_t    m_Offset   = 0;
     uint32_t    m_Size     = 0;
 };
-
-static_assert(sizeof(SarcHeader) == 0x10, "SarcHeader alignment is wrong!");
 
 /**
  * Parse a SARC file and extract file entries

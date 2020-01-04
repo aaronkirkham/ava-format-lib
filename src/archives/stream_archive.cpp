@@ -182,13 +182,14 @@ void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* ent
             entries->emplace_back(std::move(entry));
             ++total_added;
         } else {
-            if (((*it).m_Offset != entry.m_Offset || (*it).m_Size != entry.m_Size)) {
+            auto& it_entry = (*it);
+
+            if ((it_entry.m_Offset != entry.m_Offset || it_entry.m_Size != entry.m_Size)) {
                 ++total_patched;
             }
 
-            // update file offset and size
-            (*it).m_Offset = entry.m_Offset;
-            (*it).m_Size   = entry.m_Size;
+            it_entry.m_Offset = entry.m_Offset;
+            it_entry.m_Size   = entry.m_Size;
         }
     }
 
