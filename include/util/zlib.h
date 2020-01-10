@@ -24,7 +24,8 @@ int32_t Compress(const uint8_t* src, uint32_t src_len, uint8_t* dest, uint32_t* 
     stream.zfree  = (free_func)0;
     stream.opaque = (voidpf)0;
 
-    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+    err =
+        deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, -15 /*-MAX_WBITS*/, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
     if (err != Z_OK)
         return err;
 
@@ -76,7 +77,7 @@ int32_t Decompress(const uint8_t* src, uint32_t* src_len, uint8_t* dest, uint32_
     stream.zfree    = (free_func)0;
     stream.opaque   = (voidpf)0;
 
-    err = inflateInit2(&stream, -MAX_WBITS);
+    err = inflateInit2(&stream, -15 /*-MAX_WBITS*/);
     if (err != Z_OK)
         return err;
 
