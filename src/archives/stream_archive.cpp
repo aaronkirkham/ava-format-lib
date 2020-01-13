@@ -315,6 +315,11 @@ void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries
     else {
         entry         = &(*it);
         entry->m_Size = static_cast<uint32_t>(file_buffer.size());
+
+        // file exists in archive, but was patched, we should write a new data offset!
+        if (entry->m_Offset == 0 || entry->m_Offset == -1) {
+            entry->m_Offset = 1; // @NOTE: will be generated later!
+        }
     }
 
     if (header.m_Version < 2 || header.m_Version > 3) {
@@ -329,7 +334,7 @@ void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries
             for (const auto& entry : *entries) {
                 const uint32_t length            = ava::math::aligned_string_len(entry.m_Filename);
                 const uint32_t entry_header_size = sizeof(uint32_t) + length + sizeof(uint32_t) + sizeof(uint32_t);
-                const uint32_t entry_data_size   = entry.m_Offset != 0 ? entry.m_Size : 0;
+                const uint32_t entry_data_size   = (entry.m_Offset != 0 && entry.m_Offset != -1) ? entry.m_Size : 0;
 
                 header_size += entry_header_size;
                 data_size += ava::math::align(entry_data_size);
@@ -346,7 +351,8 @@ void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries
             for (auto& entry : *entries) {
                 uint32_t       padding = 0;
                 const uint32_t length  = ava::math::aligned_string_len(entry.m_Filename, sizeof(uint32_t), &padding);
-                const uint32_t data_offset = entry.m_Offset != 0 ? current_data_offset : 0;
+                const bool     exists_in_sarc = (entry.m_Offset != 0 && entry.m_Offset != -1);
+                const uint32_t data_offset    = exists_in_sarc ? current_data_offset : entry.m_Offset;
 
                 tbuf.write((char*)&length, sizeof(uint32_t));
                 tbuf.write((char*)entry.m_Filename.c_str(), entry.m_Filename.length());
@@ -354,8 +360,8 @@ void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries
                 tbuf.write((char*)&data_offset, sizeof(uint32_t));
                 tbuf.write((char*)&entry.m_Size, sizeof(uint32_t));
 
-                // don't update offsets of patched files
-                if (data_offset != 0) {
+                // only update offsets of non-patched files
+                if (exists_in_sarc) {
                     // if the current entry is the file we added, copy the buffer from the input file buffer
                     if (entry.m_NameHash == filename_hash) {
                         std::memcpy(&temp_buffer[data_offset], file_buffer.data(), file_buffer.size());
@@ -368,7 +374,7 @@ void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries
                 }
 
                 // update the current data offset
-                current_data_offset = ava::math::align(current_data_offset + (data_offset != 0 ? entry.m_Size : 0));
+                current_data_offset = ava::math::align(current_data_offset + (exists_in_sarc ? entry.m_Size : 0));
             }
 
             *buffer = std::move(temp_buffer);
