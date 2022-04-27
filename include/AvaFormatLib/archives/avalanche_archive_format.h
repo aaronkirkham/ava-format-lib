@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../error.h"
+
 #include <cstdint>
 #include <vector>
 
@@ -42,7 +44,7 @@ static_assert(sizeof(AafChunk) == 0x10, "AafChunk alignment is wrong!");
  * @param buffer Input buffer containing a raw file buffer
  * @param out_buffer Pointer to byte vector where the compressed buffer will be written
  */
-void Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer);
+Result Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer);
 
 /**
  * Decompress an AAF buffer
@@ -50,5 +52,5 @@ void Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buff
  * @param buffer Input buffer containing a raw AAF file buffer
  * @param out_buffer Pointer to byte vector where the decompressed buffer will be written
  */
-void Decompress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer);
+Result Decompress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer);
 }; // namespace ava::AvalancheArchiveFormat

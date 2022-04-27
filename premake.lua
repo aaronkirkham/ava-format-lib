@@ -18,7 +18,7 @@ workspace "AvaFormatLib"
 project "AvaFormatLib"
   kind "StaticLib"
   defines { "_CRT_SECURE_NO_WARNINGS" }
-  includedirs { "deps" }
+  includedirs { "deps", "include/AvaFormatLib" }
   files { "src/**.cpp", "include/**.h" }
   files { "deps/zlib/*.c", "deps/zlib/*.h" }
 
@@ -27,4 +27,4 @@ project "UnitTests"
   files "tests/**"
   dependson { "AvaFormatLib" }
   links { "AvaFormatLib" }
-  includedirs { "include" }
+  includedirs { "include/AvaFormatLib" }

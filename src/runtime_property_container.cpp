@@ -1,7 +1,7 @@
-#include "../include/runtime_property_container.h"
+#include <runtime_property_container.h>
 
-#include "../include/util/byte_array_buffer.h"
-#include "../include/util/hashlittle.h"
+#include <util/byte_array_buffer.h>
+#include <util/hashlittle.h>
 
 namespace ava::RuntimePropertyContainer
 {

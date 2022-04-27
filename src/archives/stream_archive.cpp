@@ -1,9 +1,9 @@
-#include "../../include/archives/stream_archive.h"
+#include <archives/stream_archive.h>
 
-#include "../../include/util/byte_array_buffer.h"
-#include "../../include/util/byte_vector_writer.h"
-#include "../../include/util/hashlittle.h"
-#include "../../include/util/math.h"
+#include <util/byte_array_buffer.h>
+#include <util/byte_vector_writer.h>
+#include <util/hashlittle.h>
+#include <util/math.h>
 
 #include <algorithm>
 #include <map>
@@ -15,14 +15,11 @@
 
 namespace ava::StreamArchive
 {
-void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_entries)
+Result Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_entries)
 {
-    if (buffer.empty()) {
-        throw std::invalid_argument("SARC input buffer can't be empty!");
-    }
-
-    if (!out_entries) {
-        throw std::invalid_argument("SARC output entries vector can't be nullptr!");
+    if (buffer.empty() || !out_entries) {
+        // throw std::invalid_argument("SARC input buffer can't be empty!");
+        return E_INVALID_ARGUMENT;
     }
 
     byte_array_buffer buf(buffer);
@@ -32,7 +29,8 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_en
     SarcHeader header{};
     stream.read((char*)&header, sizeof(SarcHeader));
     if (header.m_Magic != SARC_MAGIC) {
-        throw std::runtime_error("Invalid SARC header magic!");
+        // throw std::runtime_error("Invalid SARC header magic!");
+        return E_SARC_INVALID_MAGIC;
     }
 
     // parse the version
@@ -104,19 +102,19 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_en
         }
 
         default: {
-            throw std::runtime_error("Unknown SARC version!");
+            // throw std::runtime_error("Unknown SARC version!");
+            return E_SARC_UNKNOWN_VERSION;
         }
     }
+
+    return E_OK;
 }
 
-void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_entries)
+Result ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out_entries)
 {
-    if (buffer.empty()) {
-        throw std::invalid_argument("SARC TOC input buffer can't be empty!");
-    }
-
-    if (!out_entries) {
-        throw std::invalid_argument("SARC TOC output entries vector can't be nullptr!");
+    if (buffer.empty() || !out_entries) {
+        // throw std::invalid_argument("SARC TOC input buffer can't be empty!");
+        return E_INVALID_ARGUMENT;
     }
 
     byte_array_buffer buf(buffer);
@@ -140,17 +138,16 @@ void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* out
         stream.read((char*)&entry.m_Size, sizeof(entry.m_Size));
         out_entries->emplace_back(std::move(entry));
     }
+
+    return E_OK;
 }
 
-void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* entries, uint32_t* out_total_added,
-              uint32_t* out_total_patched)
+Result ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* entries, uint32_t* out_total_added,
+                uint32_t* out_total_patched)
 {
-    if (buffer.empty()) {
-        throw std::invalid_argument("SARC TOC input buffer can't be empty!");
-    }
-
-    if (!entries) {
-        throw std::invalid_argument("SARC TOC entries vector can't be nullptr!");
+    if (buffer.empty() || !entries) {
+        // throw std::invalid_argument("SARC TOC input buffer can't be empty!");
+        return E_INVALID_ARGUMENT;
     }
 
     byte_array_buffer buf(buffer);
@@ -200,16 +197,20 @@ void ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* ent
     if (out_total_patched) {
         *out_total_patched = total_patched;
     }
+
+    return E_OK;
 }
 
-void InitBuffer(std::vector<uint8_t>* buffer, const uint32_t version)
+Result InitBuffer(std::vector<uint8_t>* buffer, const uint32_t version)
 {
     if (!buffer || !buffer->empty()) {
-        throw std::runtime_error("input buffer must be empty!");
+        // throw std::runtime_error("input buffer must be empty!");
+        return E_INVALID_ARGUMENT;
     }
 
     if (version < 2 || version > 3) {
-        throw std::runtime_error("Invalid SARC header version! (only v2 and v3 are supported)");
+        // throw std::runtime_error("Invalid SARC header version! (only v2 and v3 are supported)");
+        return E_SARC_UNKNOWN_VERSION;
     }
 
     SarcHeader header;
@@ -217,16 +218,14 @@ void InitBuffer(std::vector<uint8_t>* buffer, const uint32_t version)
 
     byte_vector_writer buf(buffer);
     buf.write((char*)&header, sizeof(SarcHeader));
+    return E_OK;
 }
 
-void ReadEntry(const std::vector<uint8_t>& buffer, const ArchiveEntry& entry, std::vector<uint8_t>* out_buffer)
+Result ReadEntry(const std::vector<uint8_t>& buffer, const ArchiveEntry& entry, std::vector<uint8_t>* out_buffer)
 {
-    if (buffer.empty()) {
-        throw std::runtime_error("input buffer can't be empty!");
-    }
-
-    if (!out_buffer) {
-        throw std::runtime_error("output buffer can't be nullptr!");
+    if (buffer.empty() || !out_buffer) {
+        // throw std::runtime_error("input buffer can't be empty!");
+        return E_INVALID_ARGUMENT;
     }
 
     // @TODO: Fix reading entries which are patched (offset == 0).
@@ -236,27 +235,21 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const ArchiveEntry& entry, st
 
     const auto start = buffer.begin() + entry.m_Offset;
     std::copy(start, start + entry.m_Size, std::back_inserter(*out_buffer));
+    return E_OK;
 }
 
-void ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEntry>& entries,
-               const std::string& filename, std::vector<uint8_t>* out_buffer)
+Result ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEntry>& entries,
+                 const std::string& filename, std::vector<uint8_t>* out_buffer)
 {
-    if (buffer.empty()) {
-        throw std::runtime_error("input buffer can't be empty!");
-    }
-
-    if (entries.empty()) {
-        throw std::runtime_error("input entries can't be empty!");
-    }
-
-    if (!out_buffer) {
-        throw std::runtime_error("output buffer can't be nullptr!");
+    if (buffer.empty() || entries.empty() || !out_buffer) {
+        // throw std::runtime_error("input buffer can't be empty!");
+        return E_INVALID_ARGUMENT;
     }
 
     const uint32_t filename_hash = ava::hashlittle(filename.c_str());
     const auto     it = std::find_if(entries.begin(), entries.end(), [filename_hash](const ArchiveEntry& entry) {
         return entry.m_NameHash == filename_hash;
-    });
+        });
 
     if (it != entries.end()) {
         const ArchiveEntry& entry = (*it);
@@ -267,17 +260,16 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEntr
         const auto start = buffer.begin() + entry.m_Offset;
         std::copy(start, start + entry.m_Size, std::back_inserter(*out_buffer));
     }
+
+    return E_OK;
 }
 
-void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries, const std::string& filename,
-                const std::vector<uint8_t>& file_buffer)
+Result WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries, const std::string& filename,
+                  const std::vector<uint8_t>& file_buffer)
 {
-    if (!buffer || buffer->empty()) {
-        throw std::invalid_argument("input buffer can't be empty!");
-    }
-
-    if (!entries) {
-        throw std::invalid_argument("input entries can't be nullptr!");
+    if (!buffer || buffer->empty() || !entries) {
+        // throw std::invalid_argument("input buffer can't be empty!");
+        return E_INVALID_ARGUMENT;
     }
 
     byte_array_buffer buf(*buffer);
@@ -287,7 +279,8 @@ void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries
     SarcHeader header{};
     stream.read((char*)&header, sizeof(SarcHeader));
     if (header.m_Magic != SARC_MAGIC) {
-        throw std::runtime_error("Invalid SARC header magic!");
+        // throw std::runtime_error("Invalid SARC header magic!");
+        return E_SARC_INVALID_MAGIC;
     }
 
     std::vector<uint8_t> temp_buffer;
@@ -298,7 +291,7 @@ void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries
     ArchiveEntry* entry = nullptr;
     const auto    it    = std::find_if(entries->begin(), entries->end(), [filename_hash](const ArchiveEntry& item) {
         return item.m_NameHash == filename_hash;
-    });
+          });
 
     // file currently does not exist in the archive, add a new entry
     if (it == entries->end()) {
@@ -323,7 +316,8 @@ void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries
     }
 
     if (header.m_Version < 2 || header.m_Version > 3) {
-        throw std::runtime_error("Invalid SARC header version!");
+        // throw std::runtime_error("Invalid SARC header version!");
+        return E_SARC_UNKNOWN_VERSION;
     }
 
     switch (header.m_Version) {
@@ -407,16 +401,15 @@ void WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries
             break;
         }
     }
+
+    return E_OK;
 }
 
-void WriteTOC(std::vector<uint8_t>* buffer, const std::vector<ArchiveEntry>& entries)
+Result WriteTOC(std::vector<uint8_t>* buffer, const std::vector<ArchiveEntry>& entries)
 {
-    if (!buffer) {
-        throw std::runtime_error("input buffer can't be nullptr!");
-    }
-
-    if (entries.empty()) {
-        throw std::runtime_error("input entries can't be empty!");
+    if (!buffer || entries.empty()) {
+        // throw std::runtime_error("input buffer can't be nullptr!");
+        return E_INVALID_ARGUMENT;
     }
 
     byte_vector_writer buf(buffer);
@@ -429,5 +422,7 @@ void WriteTOC(std::vector<uint8_t>* buffer, const std::vector<ArchiveEntry>& ent
         buf.write((char*)&entry.m_Offset, sizeof(uint32_t));
         buf.write((char*)&entry.m_Size, sizeof(uint32_t));
     }
+
+    return E_OK;
 }
 }; // namespace ava::StreamArchive

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../error.h"
+
 #include <cstdint>
 #include <functional>
 #include <vector>
@@ -113,5 +115,5 @@ struct RbmHeader {
 static_assert(sizeof(RbmHeader) == 0x35, "RbmHeader alignment is wrong!");
 
 using RBMHashHandler = std::function<void(uint32_t, const std::vector<uint8_t>& buffer)>;
-void Parse(const std::vector<uint8_t>& buffer, RBMHashHandler rbm_hash_handler);
+Result Parse(const std::vector<uint8_t>& buffer, RBMHashHandler rbm_hash_handler);
 }; // namespace ava::RenderBlockModel

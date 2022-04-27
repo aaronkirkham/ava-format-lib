@@ -1,5 +1,7 @@
 #pragma once
 
+#include "error.h"
+
 #include <cstdint>
 #include <map>
 #include <vector>
@@ -174,7 +176,7 @@ static_assert(sizeof(SInstanceInfo) == 0x1C, "SInstanceInfo alignment is wrong."
  * @param out_header Pointer to AdfHeader where the data will be written
  * @param out_description Pointer to a string where the header description will be written (if available)
  */
-void ParseHeader(const std::vector<uint8_t>& buffer, AdfHeader* out_header, const char** out_description = nullptr);
+Result ParseHeader(const std::vector<uint8_t>& buffer, AdfHeader* out_header, const char** out_description = nullptr);
 
 class ADF
 {

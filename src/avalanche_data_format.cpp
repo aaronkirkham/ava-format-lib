@@ -1,22 +1,24 @@
-#include "../include/avalanche_data_format.h"
+#include <avalanche_data_format.h>
 
-#include "../include/util/hashlittle.h"
-#include "../include/util/math.h"
+#include <util/hashlittle.h>
+#include <util/math.h>
 
 #include <algorithm>
 
 namespace ava::AvalancheDataFormat
 {
-void ParseHeader(const std::vector<uint8_t>& buffer, AdfHeader* out_header, const char** out_description)
+Result ParseHeader(const std::vector<uint8_t>& buffer, AdfHeader* out_header, const char** out_description)
 {
     if (buffer.empty() || buffer.size() < 24) {
-        throw std::invalid_argument("ADF input buffer isn't big enough!");
+        // throw std::invalid_argument("ADF input buffer isn't big enough!");
+        return E_INVALID_ARGUMENT;
     }
 
     const AdfHeader* header = (AdfHeader*)buffer.data();
 
     if (header->m_Magic != ADF_MAGIC) {
-        throw std::runtime_error("Invalid ADF header magic!");
+        // throw std::runtime_error("Invalid ADF header magic!");
+        return E_ADF_INVALID_MAGIC;
     }
 
     *out_header = *header;
@@ -25,6 +27,8 @@ void ParseHeader(const std::vector<uint8_t>& buffer, AdfHeader* out_header, cons
     if (out_description && header->m_Description) {
         *out_description = (const char*)&header->m_Description;
     }
+
+    return E_OK;
 }
 
 ADF::ADF()
@@ -38,11 +42,11 @@ ADF::ADF(const std::vector<uint8_t>& buffer)
     , m_Buffer(buffer)
 {
     if (buffer.empty()) {
-        throw std::invalid_argument("ADF input buffer can't be empty!");
+        // throw std::invalid_argument("ADF input buffer can't be empty!");
     }
 
     if (m_Header->m_Magic != ADF_MAGIC) {
-        throw std::runtime_error("Invalid ADF header magic!");
+        // throw std::runtime_error("Invalid ADF header magic!");
     }
 
     // add built in primitive types
@@ -217,7 +221,7 @@ void ADF::AddTypes(const std::vector<uint8_t>& buffer)
         // copy the type and its members
         auto type = (AdfType*)std::malloc(size);
         if (!type) {
-            throw std::runtime_error("ADF can't allocate enough space for type");
+            // throw std::runtime_error("ADF can't allocate enough space for type");
         }
 
         std::memcpy(type, current, size);
@@ -250,7 +254,8 @@ AdfType* ADF::FindType(const uint32_t type_hash)
 bool ADF::GetInstance(uint32_t index, SInstanceInfo* out_instance_info)
 {
     if (!out_instance_info) {
-        throw std::invalid_argument("ADF GetInstance output instance can't be nullptr!");
+        // throw std::invalid_argument("ADF GetInstance output instance can't be nullptr!");
+        return false;
     }
 
     const AdfInstance* instance =

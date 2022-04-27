@@ -1,21 +1,18 @@
-#include "../../include/archives/avalanche_archive_format.h"
+#include <archives/avalanche_archive_format.h>
 
-#include "../../include/util/byte_array_buffer.h"
-#include "../../include/util/byte_vector_writer.h"
-#include "../../include/util/hashlittle.h"
-#include "../../include/util/math.h"
-#include "../../include/util/zlib.h"
+#include <util/byte_array_buffer.h>
+#include <util/byte_vector_writer.h>
+#include <util/hashlittle.h>
+#include <util/math.h>
+#include <util/zlib.h>
 
 namespace ava::AvalancheArchiveFormat
 {
-void Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
+Result Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
 {
-    if (buffer.empty()) {
-        throw std::invalid_argument("AAF compress input buffer can't be empty!");
-    }
-
-    if (!out_buffer) {
-        throw std::invalid_argument("AAF compress output buffer can't be nullptr!");
+    if (buffer.empty() || !out_buffer) {
+        // throw std::invalid_argument("AAF compress input buffer can't be empty!");
+        return E_INVALID_ARGUMENT;
     }
 
     const uint32_t buffer_size         = static_cast<uint32_t>(buffer.size());
@@ -58,12 +55,13 @@ void Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buff
         uint32_t             compressed_size = compressBound(chunk.m_DecompressedSize);
         std::vector<uint8_t> compressed_block(compressed_size);
         const int32_t        result = ava::zlib::Compress((has_multiple_chunks ? chunk_data.data() : buffer.data()),
-                                                   chunk.m_DecompressedSize, compressed_block.data(), &compressed_size);
+                                                          chunk.m_DecompressedSize, compressed_block.data(), &compressed_size);
         if (result != Z_OK) {
 #ifdef _DEBUG
             __debugbreak();
 #endif
-            throw std::runtime_error("Failed to compress an AAF chunk!");
+            // throw std::runtime_error("Failed to compress an AAF chunk!");
+            return E_AAF_COMPRESS_CHUNK_FAILED;
         }
 
         // update the chunk compressed size
@@ -81,16 +79,15 @@ void Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buff
         // write block padding
         buf.write((char*)&AAF_PADDING_BYTE, 1, padding);
     }
+
+    return E_OK;
 }
 
-void Decompress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
+Result Decompress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
 {
-    if (buffer.empty()) {
-        throw std::invalid_argument("AAF decompress input buffer can't be empty!");
-    }
-
-    if (!out_buffer) {
-        throw std::invalid_argument("AAF decompress output buffer can't be nullptr!");
+    if (buffer.empty() || !out_buffer) {
+        // throw std::invalid_argument("AAF decompress input buffer can't be empty!");
+        return E_INVALID_ARGUMENT;
     }
 
     byte_array_buffer buf(buffer);
@@ -100,7 +97,8 @@ void Decompress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_bu
     AafHeader header{};
     stream.read((char*)&header, sizeof(AafHeader));
     if (header.m_Magic != AAF_MAGIC) {
-        throw std::runtime_error("Invalid AAF header magic!");
+        // throw std::runtime_error("Invalid AAF header magic!");
+        return E_AAF_INVALID_MAGIC;
     }
 
     out_buffer->reserve(header.m_TotalUnpackedSize);
@@ -113,7 +111,8 @@ void Decompress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_bu
         AafChunk chunk;
         stream.read((char*)&chunk, sizeof(AafChunk));
         if (chunk.m_Magic != AAF_CHUNK_MAGIC) {
-            throw std::runtime_error("Invalid AAF chunk magic!");
+            // throw std::runtime_error("Invalid AAF chunk magic!");
+            return E_AAF_INVALID_CHUNK_MAGIC;
         }
 
         // read the chunk data
@@ -131,11 +130,14 @@ void Decompress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_bu
 #ifdef _DEBUG
             __debugbreak();
 #endif
-            throw std::runtime_error("Failed to decompress an AAF chunk!");
+            // throw std::runtime_error("Failed to decompress an AAF chunk!");
+            return E_AAF_DECOMPRESS_CHUNK_FAILED;
         }
 
         out_buffer->insert(out_buffer->end(), decompressed_chunk_data.begin(), decompressed_chunk_data.end());
         stream.seekg((uint64_t)start_pos + chunk.m_ChunkSize);
     }
+
+    return E_OK;
 }
 }; // namespace ava::AvalancheArchiveFormat

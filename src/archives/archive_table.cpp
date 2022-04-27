@@ -1,25 +1,20 @@
-#include "../../include/archives/archive_table.h"
+#include <archives/archive_table.h>
+#include <archives/oodle_helper.h>
 
-#include "../../include/archives/oodle_helper.h"
-
-#include "../../include/util/byte_array_buffer.h"
-#include "../../include/util/byte_vector_writer.h"
-#include "../../include/util/hashlittle.h"
+#include <util/byte_array_buffer.h>
+#include <util/byte_vector_writer.h>
+#include <util/hashlittle.h>
 
 #include <algorithm>
 #include <assert.h>
 
 namespace ava::ArchiveTable
 {
-void Parse(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entries,
-           std::vector<TabCompressedBlock>* out_compression_blocks)
+Result Parse(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entries,
+             std::vector<TabCompressedBlock>* out_compression_blocks)
 {
-    if (buffer.empty()) {
-        throw std::invalid_argument("TAB input buffer can't be empty!");
-    }
-
-    if (!out_entries) {
-        throw std::invalid_argument("TAB output entries vector can't be nullptr!");
+    if (buffer.empty() || !out_entries) {
+        return E_INVALID_ARGUMENT;
     }
 
     byte_array_buffer buf(buffer);
@@ -29,7 +24,8 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entrie
     TabHeader header{};
     stream.read((char*)&header, sizeof(TabHeader));
     if (header.m_Magic != TAB_MAGIC) {
-        throw std::runtime_error("Invalid TAB header magic! (Input file isn't .TAB?)");
+        // throw std::runtime_error("Invalid TAB header magic! (Input file isn't .TAB?)");
+        return E_TAB_INVALID_MAGIC;
     }
 
     // read compressed blocks
@@ -49,9 +45,11 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entrie
         stream.read((char*)&entry, sizeof(TabEntry));
         out_entries->emplace_back(std::move(entry));
     }
+
+    return E_OK;
 }
 
-void ReadEntry(const std::vector<uint8_t>& buffer, const uint32_t name_hash, TabEntry* out_entry)
+Result ReadEntry(const std::vector<uint8_t>& buffer, const uint32_t name_hash, TabEntry* out_entry)
 {
     std::vector<TabEntry> entries;
     Parse(buffer, &entries);
@@ -59,25 +57,25 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const uint32_t name_hash, Tab
     const auto it = std::find_if(entries.begin(), entries.end(),
                                  [name_hash](const TabEntry& entry) { return entry.m_NameHash == name_hash; });
     if (it == entries.end()) {
-        throw std::runtime_error("entry was not found in archive table!");
+        // throw std::runtime_error("entry was not found in archive table!");
+        return E_TAB_UNKNOWN_ENTRY;
     }
 
     *out_entry = (*it);
+    return E_OK;
 }
 
-void ReadEntryBuffer(const std::vector<uint8_t>& archive_buffer, const TabEntry& entry,
-                     std::vector<uint8_t>* out_buffer, const std::vector<TabCompressedBlock>& compression_blocks)
+Result ReadEntryBuffer(const std::vector<uint8_t>& archive_buffer, const TabEntry& entry,
+                       std::vector<uint8_t>* out_buffer, const std::vector<TabCompressedBlock>& compression_blocks)
 {
-    if (archive_buffer.empty()) {
-        throw std::invalid_argument("input buffer can't be empty!");
-    }
-
-    if (!out_buffer) {
-        throw std::invalid_argument("output buffer vector can't be nullptr!");
+    if (archive_buffer.empty() || !out_buffer) {
+        // throw std::invalid_argument("input buffer can't be empty!");
+        return E_INVALID_ARGUMENT;
     }
 
     if (entry.m_CompressedBlockIndex != 0 && compression_blocks.empty()) {
-        throw std::invalid_argument("entry uses compression blocks, but none were passed.");
+        // throw std::invalid_argument("entry uses compression blocks, but none were passed.");
+        return E_TAB_INPUT_REQUIRES_COMPRESSION_BLOCKS;
     }
 
     // entry isn't using compression, read directly from the buffer
@@ -97,23 +95,24 @@ void ReadEntryBuffer(const std::vector<uint8_t>& archive_buffer, const TabEntry&
         std::vector<uint8_t> compressed_buffer(entry.m_Size);
         std::memcpy(compressed_buffer.data(), archive_buffer.data() + entry.m_Offset, size);
 
-        DecompressEntryBuffer(compressed_buffer, entry, out_buffer, compression_blocks);
+        return DecompressEntryBuffer(compressed_buffer, entry, out_buffer, compression_blocks);
     }
+
+    return E_OK;
 }
 
-void DecompressEntryBuffer(const std::vector<uint8_t>& buffer, const TabEntry& entry, std::vector<uint8_t>* out_buffer,
-                           const std::vector<TabCompressedBlock>& compression_blocks)
+Result DecompressEntryBuffer(const std::vector<uint8_t>& buffer, const TabEntry& entry,
+                             std::vector<uint8_t>*                  out_buffer,
+                             const std::vector<TabCompressedBlock>& compression_blocks)
 {
-    if (buffer.empty()) {
-        throw std::invalid_argument("input buffer can't be empty!");
-    }
-
-    if (!out_buffer) {
-        throw std::invalid_argument("output buffer vector can't be nullptr!");
+    if (buffer.empty() || !out_buffer) {
+        // throw std::invalid_argument("input buffer can't be empty!");
+        return E_INVALID_ARGUMENT;
     }
 
     if (entry.m_CompressedBlockIndex != 0 && compression_blocks.empty()) {
-        throw std::invalid_argument("entry uses compression blocks, but none were passed.");
+        // throw std::invalid_argument("entry uses compression blocks, but none were passed.");
+        return E_TAB_INPUT_REQUIRES_COMPRESSION_BLOCKS;
     }
 
     // read the entry buffer from the input buffer
@@ -131,7 +130,8 @@ void DecompressEntryBuffer(const std::vector<uint8_t>& buffer, const TabEntry& e
 #ifdef _DEBUG
             __debugbreak();
 #endif
-            throw std::runtime_error("Zlib Decompression not implemented!");
+            // throw std::runtime_error("Zlib Decompression not implemented!");
+            return E_NOT_IMPLEMENTED;
             break;
         }
 
@@ -155,7 +155,7 @@ void DecompressEntryBuffer(const std::vector<uint8_t>& buffer, const TabEntry& e
                     __debugbreak();
 #endif
                     out_buffer->clear();
-                    throw std::runtime_error("CompressionType_Oodle: Failed to decompress the buffer.");
+                    return E_TAB_DECOMPRESS_BLOCK_FAILED;
                 }
             }
             // entry is using compression blocks
@@ -183,7 +183,7 @@ void DecompressEntryBuffer(const std::vector<uint8_t>& buffer, const TabEntry& e
                         __debugbreak();
 #endif
                         out_buffer->clear();
-                        throw std::runtime_error("CompressionType_Oodle: Failed to decompress block buffer");
+                        return E_TAB_DECOMPRESS_BLOCK_FAILED;
                     }
 
                     total_compressed_size -= block.m_CompressedSize;
@@ -196,46 +196,41 @@ void DecompressEntryBuffer(const std::vector<uint8_t>& buffer, const TabEntry& e
             break;
         }
     }
+
+    return E_OK;
 }
 
 uint32_t GetEntryRequiredBufferSize(const TabEntry& entry, const std::vector<TabCompressedBlock>& compression_blocks)
 {
-    if (entry.m_Library == E_COMPRESS_LIBRARY_OODLE && entry.m_CompressedBlockIndex != 0) {
-        if (compression_blocks.empty()) {
-            throw std::runtime_error("entry uses compression blocks, but none were passed.");
-        }
-
-        uint16_t current_block_index   = entry.m_CompressedBlockIndex;
-        uint32_t total_compressed_size = entry.m_Size;
-        uint32_t remaining             = entry.m_Size;
-
-        while (remaining > 0) {
-            const TabCompressedBlock& block = compression_blocks.at(current_block_index);
-
-            remaining -= block.m_CompressedSize;
-            total_compressed_size += block.m_CompressedSize;
-            ++current_block_index;
-        }
-
-        return total_compressed_size;
+    if (entry.m_Library != E_COMPRESS_LIBRARY_NONE || entry.m_CompressedBlockIndex == 0) {
+        return entry.m_Size;
     }
 
-    return entry.m_Size;
+    if (compression_blocks.empty()) {
+        // TODO : should this be an error?
+        return 0;
+    }
+
+    uint16_t current_block_index   = entry.m_CompressedBlockIndex;
+    uint32_t total_compressed_size = entry.m_Size;
+    uint32_t remaining             = entry.m_Size;
+
+    while (remaining > 0) {
+        const TabCompressedBlock& block = compression_blocks.at(current_block_index);
+
+        remaining -= block.m_CompressedSize;
+        total_compressed_size += block.m_CompressedSize;
+        ++current_block_index;
+    }
+
+    return total_compressed_size;
 }
 
-void WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer, const std::string& filename,
-                const std::vector<uint8_t>& file_buffer, ECompressLibrary compression)
+Result WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer,
+                  const std::string& filename, const std::vector<uint8_t>& file_buffer, ECompressLibrary compression)
 {
-    if (!out_tab_buffer || !out_arc_buffer) {
-        throw std::invalid_argument("pointers to output tab/arc buffers can not be nullptr!");
-    }
-
-    if (filename.empty()) {
-        throw std::invalid_argument("filename string can not be empty!");
-    }
-
-    if (file_buffer.empty()) {
-        throw std::invalid_argument("input file buffer can not be empty!");
+    if (!out_tab_buffer || !out_arc_buffer || filename.empty() || file_buffer.empty()) {
+        return E_INVALID_ARGUMENT;
     }
 
     byte_vector_writer buf(out_tab_buffer);
@@ -272,7 +267,8 @@ void WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_
 #ifdef _DEBUG
             __debugbreak();
 #endif
-            throw std::runtime_error("Zlib Crompression not implemented!");
+            // throw std::runtime_error("Zlib Crompression not implemented!");
+            return E_NOT_IMPLEMENTED;
             break;
         }
 
@@ -290,7 +286,7 @@ void WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_
 #ifdef _DEBUG
                     __debugbreak();
 #endif
-                    throw std::runtime_error("CompressionType_Oodle: Failed to compress the buffer.");
+                    return E_TAB_COMPRESS_BLOCK_FAILED;
                 }
 
                 // write the compressed buffer to the arc buffer
@@ -299,7 +295,8 @@ void WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_
 #ifdef _DEBUG
                 __debugbreak();
 #endif
-                throw std::runtime_error("CompressionType_Oodle: Compression blocks not implemented!");
+                return E_NOT_IMPLEMENTED;
+                // throw std::runtime_error("CompressionType_Oodle: Compression blocks not implemented!");
             }
 
             break;
@@ -308,5 +305,6 @@ void WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_
 
     // write the tab entry
     buf.write((char*)&entry, sizeof(TabEntry));
+    return E_OK;
 }
 }; // namespace ava::ArchiveTable

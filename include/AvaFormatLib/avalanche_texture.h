@@ -1,5 +1,7 @@
 #pragma once
 
+#include "error.h"
+
 #include <cstdint>
 #include <vector>
 
@@ -69,8 +71,8 @@ static_assert(sizeof(AvtxHeader) == 0x80, "AvtxHeader alignment is wrong!");
  * @param out_buffer Pointer to a byte vector where the texture pixel data will be written
  * @param source_buffer (Optional) Input source buffer containing raw texture data
  */
-void ReadBestEntry(const std::vector<uint8_t>& buffer, TextureEntry* out_entry, std::vector<uint8_t>* out_buffer,
-                   const std::vector<uint8_t>& source_buffer = {});
+Result ReadBestEntry(const std::vector<uint8_t>& buffer, TextureEntry* out_entry, std::vector<uint8_t>* out_buffer,
+                     const std::vector<uint8_t>& source_buffer = {});
 
 /**
  * Read a specific entry from the AVTX buffer
@@ -82,8 +84,8 @@ void ReadBestEntry(const std::vector<uint8_t>& buffer, TextureEntry* out_entry, 
  * @param source_buffer (Optional) Input source buffer containing raw texture data (only required if the
  * AvtxStream.m_Source is set)
  */
-void ReadEntry(const std::vector<uint8_t>& buffer, const uint8_t stream_index, TextureEntry* out_entry,
-               std::vector<uint8_t>* out_buffer, const std::vector<uint8_t>& source_buffer = {});
+Result ReadEntry(const std::vector<uint8_t>& buffer, const uint8_t stream_index, TextureEntry* out_entry,
+                 std::vector<uint8_t>* out_buffer, const std::vector<uint8_t>& source_buffer = {});
 
 /**
  * Write a texture entry to the AVTX buffer
@@ -94,8 +96,8 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const uint8_t stream_index, T
  * @param source_buffer (Optional) Write to source buffer instead of AVTX file buffer (only required if entry.m_Source
  * is set)
  */
-void WriteEntry(std::vector<uint8_t>* buffer, const TextureEntry& entry, const std::vector<uint8_t>& texture_buffer,
-                std::vector<uint8_t>* source_buffer = nullptr);
+Result WriteEntry(std::vector<uint8_t>* buffer, const TextureEntry& entry, const std::vector<uint8_t>& texture_buffer,
+                  std::vector<uint8_t>* source_buffer = nullptr);
 
 uint8_t  FindBestStream(const AvtxHeader& header, uint8_t source = 0);
 uint32_t GetRank(const AvtxHeader& header, uint8_t stream_index);

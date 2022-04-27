@@ -1,9 +1,10 @@
 #pragma once
 
+#include "../avalanche_data_format.h"
+#include "../error.h"
+
 #include <cstdint>
 #include <vector>
-
-#include "../avalanche_data_format.h"
 
 namespace ava::AvalancheModelFormat
 {
@@ -166,9 +167,9 @@ struct SAmfMeshBuffers {
 static_assert(sizeof(SAmfBuffer) == 0x18, "SAmfBuffer alignment is wrong!");
 static_assert(sizeof(SAmfMeshBuffers) == 0x28, "SAmfMeshBuffers alignment is wrong!");
 
-void ParseModelc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::ADF** out_adf, SAmfModel** out_model);
-void ParseMeshc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::ADF** out_adf,
-                SAmfMeshHeader** out_mesh_header, SAmfMeshBuffers** out_mesh_buffer);
-void ParseHrmeshc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::ADF** out_adf,
-                  SAmfMeshBuffers** out_mesh_buffer);
+Result ParseModelc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::ADF** out_adf, SAmfModel** out_model);
+Result ParseMeshc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::ADF** out_adf,
+                  SAmfMeshHeader** out_mesh_header, SAmfMeshBuffers** out_mesh_buffer);
+Result ParseHrmeshc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::ADF** out_adf,
+                    SAmfMeshBuffers** out_mesh_buffer);
 }; // namespace ava::AvalancheModelFormat

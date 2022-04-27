@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../error.h"
+
 #include <cstdint>
 #include <vector>
 
@@ -51,9 +53,9 @@ static void*                oodle_handle       = nullptr;
 static OodleLZ_Compress_t   OodleLZ_Compress   = nullptr;
 static OodleLZ_Decompress_t OodleLZ_Decompress = nullptr;
 
-void LoadLib(const char* oodle_dll_path);
-void LoadLib(void* handle);
-void UnloadLib();
+Result LoadLib(const char* oodle_dll_path);
+Result LoadLib(void* handle);
+void   UnloadLib();
 
 static int64_t GetCompressedBufferSizeNeeded(int64_t size)
 {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../error.h"
+
 #include <cstdint>
 #include <vector>
 
@@ -57,8 +59,8 @@ static_assert(sizeof(TabCompressedBlock) == 0x8, "TabCompressedBlock alignment i
  * @param out_compression_blocks (Optional) Pointer to vector of TabCompressedBlock where the compression entries will
  * be written
  */
-void Parse(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entries,
-           std::vector<TabCompressedBlock>* out_compression_blocks = nullptr);
+Result Parse(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entries,
+             std::vector<TabCompressedBlock>* out_compression_blocks = nullptr);
 
 /**
  * Read a single entry from a TAB file buffer
@@ -67,7 +69,7 @@ void Parse(const std::vector<uint8_t>& buffer, std::vector<TabEntry>* out_entrie
  * @param name_hash Filename hash of the entry to read
  * @param out_entry Pointer to a TabEntry struct where the entry will be written
  */
-void ReadEntry(const std::vector<uint8_t>& buffer, const uint32_t name_hash, TabEntry* out_entry);
+Result ReadEntry(const std::vector<uint8_t>& buffer, const uint32_t name_hash, TabEntry* out_entry);
 
 /**
  * Read an entry file buffer from an ARC file buffer
@@ -77,8 +79,9 @@ void ReadEntry(const std::vector<uint8_t>& buffer, const uint32_t name_hash, Tab
  * @param out_buffer Pointer to a byte vector where the entry file buffer will be written
  * @param compression_blocks (Optional) Vector of TabCompressedBlocks (required if entry.m_CompressedBlockIndex != 0)
  */
-void ReadEntryBuffer(const std::vector<uint8_t>& archive_buffer, const TabEntry& entry,
-                     std::vector<uint8_t>* out_buffer, const std::vector<TabCompressedBlock>& compression_blocks = {});
+Result ReadEntryBuffer(const std::vector<uint8_t>& archive_buffer, const TabEntry& entry,
+                       std::vector<uint8_t>*                  out_buffer,
+                       const std::vector<TabCompressedBlock>& compression_blocks = {});
 
 /**
  * Decompress an entries buffer, similiar to ReadEntryBuffer, but requires the input buffer to only be the entry buffer
@@ -89,8 +92,9 @@ void ReadEntryBuffer(const std::vector<uint8_t>& archive_buffer, const TabEntry&
  * @param out_buffer Pointer to a byte vector where the decompressed entry file buffer will be written
  * @param compression_blocks (Optional) Vector of TabCompressedBlocks (required if entry.m_CompressedBlockIndex != 0)
  */
-void DecompressEntryBuffer(const std::vector<uint8_t>& buffer, const TabEntry& entry, std::vector<uint8_t>* out_buffer,
-                           const std::vector<TabCompressedBlock>& compression_blocks = {});
+Result DecompressEntryBuffer(const std::vector<uint8_t>& buffer, const TabEntry& entry,
+                             std::vector<uint8_t>*                  out_buffer,
+                             const std::vector<TabCompressedBlock>& compression_blocks = {});
 
 /**
  * Return total size required for compressed buffer size
@@ -110,6 +114,7 @@ uint32_t GetEntryRequiredBufferSize(const TabEntry&                        entry
  * @param file_buffer Entry file buffer to write to the ARC file buffer
  * @param compression (Optional) Compression method to use to compress the entry file buffer
  */
-void WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer, const std::string& filename,
-                const std::vector<uint8_t>& file_buffer, ECompressLibrary compression = E_COMPRESS_LIBRARY_NONE);
+Result WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* out_arc_buffer,
+                  const std::string& filename, const std::vector<uint8_t>& file_buffer,
+                  ECompressLibrary compression = E_COMPRESS_LIBRARY_NONE);
 }; // namespace ava::ArchiveTable
