@@ -8,6 +8,8 @@
 
 namespace ava::RenderBlockModel
 {
+using RenderBlockData = std::pair<uint32_t, std::vector<uint8_t>>;
+
 static constexpr uint32_t RBM_BLOCK_CHECKSUM = 0x89ABCDEF;
 
 enum RenderBlockType : uint32_t {
@@ -114,6 +116,11 @@ struct RbmHeader {
 
 static_assert(sizeof(RbmHeader) == 0x35, "RbmHeader alignment is wrong!");
 
-using RBMHashHandler = std::function<void(uint32_t, const std::vector<uint8_t>& buffer)>;
-Result Parse(const std::vector<uint8_t>& buffer, RBMHashHandler rbm_hash_handler);
+/**
+ * Parse a RBMDL file and extract render blocks
+ *
+ * @param buffer Input buffer containing a raw RBMDL file buffer
+ * @param out_render_blocks Pointer to a vector of RenderBlockData where the render blocks will be written
+//  */
+Result Parse(const std::vector<uint8_t>& buffer, std::vector<RenderBlockData>* out_render_blocks);
 }; // namespace ava::RenderBlockModel

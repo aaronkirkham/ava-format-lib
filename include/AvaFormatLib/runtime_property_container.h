@@ -2,8 +2,8 @@
 
 #include "error.h"
 
+#include <any>
 #include <cstdint>
-#include <queue>
 #include <vector>
 
 namespace ava::RuntimePropertyContainer
@@ -29,6 +29,29 @@ enum EVariantType : uint8_t {
     T_VARIANT_VEC_EVENTS    = 0xE,
 };
 
+static const char* VariantTypeToString(EVariantType type)
+{
+    switch (type) {
+        case T_VARIANT_UNASSIGNED: return "T_VARIANT_UNASSIGNED";
+        case T_VARIANT_INTEGER: return "T_VARIANT_INTEGER";
+        case T_VARIANT_FLOAT: return "T_VARIANT_FLOAT";
+        case T_VARIANT_STRING: return "T_VARIANT_STRING";
+        case T_VARIANT_VEC2: return "T_VARIANT_VEC2";
+        case T_VARIANT_VEC3: return "T_VARIANT_VEC3";
+        case T_VARIANT_VEC4: return "T_VARIANT_VEC4";
+        case T_VARIANT__DO_NOT_USE_1: return "T_VARIANT__DO_NOT_USE_1";
+        case T_VARIANT_MAT4x4: return "T_VARIANT_MAT4x4";
+        case T_VARIANT_VEC_INTS: return "T_VARIANT_VEC_INTS";
+        case T_VARIANT_VEC_FLOATS: return "T_VARIANT_VEC_FLOATS";
+        case T_VARIANT_VEC_BYTES: return "T_VARIANT_VEC_BYTES";
+        case T_VARIANT__DO_NOT_USE_2: return "T_VARIANT__DO_NOT_USE_2";
+        case T_VARIANT_OBJECTID: return "T_VARIANT_OBJECTID";
+        case T_VARIANT_VEC_EVENTS: return "T_VARIANT_VEC_EVENTS";
+    }
+
+    return "";
+}
+
 #pragma pack(push, 1)
 struct RtpcHeader {
     uint32_t m_Magic   = RTPC_MAGIC;
@@ -53,16 +76,50 @@ static_assert(sizeof(RtpcHeader) == 0x8, "RtpcHeader alignment is wrong!");
 static_assert(sizeof(RtpcContainer) == 0xC, "RtpcContainer alignment is wrong!");
 static_assert(sizeof(RtpcContainerVariant) == 0x9, "RtpcContainerVariant alignment is wrong!");
 
-class RTPC
-{
-  private:
-    RtpcContainer* m_Container = nullptr;
+struct Variant {
+    uint32_t     m_NameHash = 0xFFFFFFFF;
+    EVariantType m_Type;
+    std::any     m_Value;
 
-  public:
-    RTPC(const std::vector<uint8_t>& buffer);
-    virtual ~RTPC();
+    static Variant invalid() { return Variant(); }
 
-    void GetContainer(const uint32_t key);
-    void GetVariant(const uint32_t key);
+    Variant() = default;
+    Variant(uint32_t namehash, EVariantType type)
+        : m_NameHash(namehash)
+        , m_Type(type)
+    {
+    }
+
+    template <typename T> T&       as() { return std::any_cast<T&>(m_Value); }
+    template <typename T> const T& as() const { return std::any_cast<T&>(m_Value); }
+
+    const bool valid() const { return m_NameHash != 0xFFFFFFFF; }
 };
+
+struct Container {
+    uint32_t               m_NameHash = 0xFFFFFFFF;
+    std::vector<Container> m_Containers;
+    std::vector<Variant>   m_Variants;
+
+    static Container invalid() { return Container(); }
+
+    Container() = default;
+    Container(uint32_t namehash)
+        : m_NameHash(namehash)
+    {
+    }
+
+    Container& GetContainer(uint32_t namehash, bool look_in_child_containers = true);
+    Variant&   GetVariant(uint32_t namehash, bool look_in_child_containers = true);
+
+    const bool valid() const { return m_NameHash != 0xFFFFFFFF; }
+};
+
+/**
+ * Parse an RTPC file
+ *
+ * @param buffer Input buffer containing a raw RTPC file buffer
+ * @param out_containers Pointer to a Container of the root node
+//  */
+Result Parse(const std::vector<uint8_t>& buffer, Container* out_root_container);
 }; // namespace ava::RuntimePropertyContainer

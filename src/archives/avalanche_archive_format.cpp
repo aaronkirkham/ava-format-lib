@@ -8,6 +8,11 @@
 
 namespace ava::AvalancheArchiveFormat
 {
+bool IsCompressed(const std::vector<uint8_t>& buffer)
+{
+    return *(uint32_t*)buffer.data() == AAF_MAGIC;
+}
+
 Result Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_buffer)
 {
     if (buffer.empty() || !out_buffer) {

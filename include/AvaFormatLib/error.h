@@ -28,18 +28,20 @@ enum Result {
     // SARC
     E_SARC_INVALID_MAGIC,
     E_SARC_UNKNOWN_VERSION,
+    E_SARC_UNKNOWN_ENTRY,
     E_SARC_PATCHED_ENTRY,
+
+    // RTPC
+    E_RTPC_INVALID_MAGIC,
+    E_RTPC_UNKNOWN_VERSION,
 
     // RBMDL
     E_RBMDL_INVALID_MAGIC,
     E_RBMDL_UNKNOWN_VERSION,
-    E_RBMDL_BAD_CHECKSUM,
+    // E_RBMDL_BAD_CHECKSUM,
 
     // ADF
     E_ADF_INVALID_MAGIC,
-
-    // RTPC
-    E_RTPC_INVALID_MAGIC,
 
     // AVTX
     E_AVTX_INVALID_MAGIC,
@@ -75,18 +77,20 @@ static const char* ResultToString(Result result)
         // SARC
         case E_SARC_INVALID_MAGIC: return "E_SARC_INVALID_MAGIC";
         case E_SARC_UNKNOWN_VERSION: return "E_SARC_UNKNOWN_VERSION";
+        case E_SARC_UNKNOWN_ENTRY: return "E_SARC_UNKNOWN_ENTRY";
         case E_SARC_PATCHED_ENTRY: return "E_SARC_PATCHED_ENTRY";
+
+        // RTPC
+        case E_RTPC_INVALID_MAGIC: return "E_RTPC_INVALID_MAGIC";
+        case E_RTPC_UNKNOWN_VERSION: return "E_RTPC_UNKNOWN_VERSION";
 
         // RBMDL
         case E_RBMDL_INVALID_MAGIC: return "E_RBMDL_INVALID_MAGIC";
         case E_RBMDL_UNKNOWN_VERSION: return "E_RBMDL_UNKNOWN_VERSION";
-        case E_RBMDL_BAD_CHECKSUM: return "E_RBMDL_BAD_CHECKSUM";
+        // case E_RBMDL_BAD_CHECKSUM: return "E_RBMDL_BAD_CHECKSUM";
 
         // ADF
         case E_ADF_INVALID_MAGIC: return "E_ADF_INVALID_MAGIC";
-
-        // RTPC
-        case E_RTPC_INVALID_MAGIC: return "E_RTPC_INVALID_MAGIC";
 
         // AVTX
         case E_AVTX_INVALID_MAGIC: return "E_AVTX_INVALID_MAGIC";

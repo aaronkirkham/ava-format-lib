@@ -224,7 +224,6 @@ Result InitBuffer(std::vector<uint8_t>* buffer, const uint32_t version)
 Result ReadEntry(const std::vector<uint8_t>& buffer, const ArchiveEntry& entry, std::vector<uint8_t>* out_buffer)
 {
     if (buffer.empty() || !out_buffer) {
-        // throw std::runtime_error("input buffer can't be empty!");
         return E_INVALID_ARGUMENT;
     }
 
@@ -246,7 +245,6 @@ Result ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEn
                  const std::string& filename, std::vector<uint8_t>* out_buffer)
 {
     if (buffer.empty() || entries.empty() || !out_buffer) {
-        // throw std::runtime_error("input buffer can't be empty!");
         return E_INVALID_ARGUMENT;
     }
 
@@ -255,20 +253,21 @@ Result ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEn
         return entry.m_NameHash == filename_hash;
         });
 
-    if (it != entries.end()) {
-        const ArchiveEntry& entry = (*it);
-
-        // entry does not exist in this archive (patched)
-        if (entry.m_Offset == 0 || entry.m_Offset == -1) {
-            return E_SARC_PATCHED_ENTRY;
-        }
-
-        assert((entry.m_Offset + entry.m_Size) <= buffer.size());
-
-        const auto start = buffer.begin() + entry.m_Offset;
-        std::copy(start, start + entry.m_Size, std::back_inserter(*out_buffer));
+    if (it == entries.end()) {
+        return E_SARC_UNKNOWN_ENTRY;
     }
 
+    const ArchiveEntry& entry = (*it);
+
+    // entry does not exist in this archive (patched)
+    if (entry.m_Offset == 0 || entry.m_Offset == -1) {
+        return E_SARC_PATCHED_ENTRY;
+    }
+
+    assert((entry.m_Offset + entry.m_Size) <= buffer.size());
+
+    const auto start = buffer.begin() + entry.m_Offset;
+    std::copy(start, start + entry.m_Size, std::back_inserter(*out_buffer));
     return E_OK;
 }
 

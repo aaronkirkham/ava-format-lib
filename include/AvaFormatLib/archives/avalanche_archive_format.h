@@ -21,10 +21,7 @@ struct AafHeader {
     uint32_t m_RequiredUnpackBufferSize = 0;
     uint32_t m_NumChunks                = 0;
 
-    AafHeader()
-    {
-        memcpy(m_Magic2, "AVALANCHEARCHIVEFORMATISCOOL", 28);
-    }
+    AafHeader() { memcpy(m_Magic2, "AVALANCHEARCHIVEFORMATISCOOL", 28); }
 };
 
 struct AafChunk {
@@ -37,6 +34,13 @@ struct AafChunk {
 
 static_assert(sizeof(AafHeader) == 0x30, "AafHeader alignment is wrong!");
 static_assert(sizeof(AafChunk) == 0x10, "AafChunk alignment is wrong!");
+
+/**
+ * Check if a raw file buffer contains a compressed AAF file buffer
+ *
+ * @param buffer Input buffer containing a raw file buffer
+ */
+bool IsCompressed(const std::vector<uint8_t>& buffer);
 
 /**
  * Compress to an AAF buffer
