@@ -5,11 +5,10 @@
 
 namespace ava::RuntimePropertyContainer
 {
-#if 0
-RuntimeContainer::RuntimeContainer(const std::vector<uint8_t>& buffer)
+RTPC::RTPC(const std::vector<uint8_t>& buffer)
 {
     if (buffer.empty()) {
-        throw std::invalid_argument("RTPC input buffer can't be empty!");
+        // E_INVALID_ARGUMENT;
     }
 
     byte_array_buffer buf(buffer);
@@ -19,19 +18,19 @@ RuntimeContainer::RuntimeContainer(const std::vector<uint8_t>& buffer)
     RtpcHeader header{};
     stream.read((char*)&header, sizeof(RtpcHeader));
     if (header.m_Magic != RTPC_MAGIC) {
-        throw std::runtime_error("Invalid RTPC header magic!");
+        // E_RTPC_INVALID_MAGIC;
     }
 
     //
     m_Container = (RtpcContainer*)(buffer.data() + sizeof(RtpcHeader));
 }
 
-RuntimeContainer::~RuntimeContainer()
+RTPC::~RTPC()
 {
     //
 }
 
-void RuntimeContainer::GetContainer(const uint32_t key)
+void RTPC::GetContainer(const uint32_t key)
 {
     //
     uintptr_t ptr;
@@ -40,9 +39,8 @@ void RuntimeContainer::GetContainer(const uint32_t key)
     }
 }
 
-void RuntimeContainer::GetVariant(const uint32_t key)
+void RTPC::GetVariant(const uint32_t key)
 {
     //
 }
-#endif
 }; // namespace ava::RuntimePropertyContainer

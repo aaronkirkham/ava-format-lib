@@ -1,6 +1,9 @@
 #pragma once
 
+#include "error.h"
+
 #include <cstdint>
+#include <queue>
 #include <vector>
 
 namespace ava::RuntimePropertyContainer
@@ -50,18 +53,16 @@ static_assert(sizeof(RtpcHeader) == 0x8, "RtpcHeader alignment is wrong!");
 static_assert(sizeof(RtpcContainer) == 0xC, "RtpcContainer alignment is wrong!");
 static_assert(sizeof(RtpcContainerVariant) == 0x9, "RtpcContainerVariant alignment is wrong!");
 
-#if 0
-class RuntimeContainer
+class RTPC
 {
   private:
     RtpcContainer* m_Container = nullptr;
 
   public:
-    RuntimeContainer(const std::vector<uint8_t>& buffer);
-    virtual ~RuntimeContainer();
+    RTPC(const std::vector<uint8_t>& buffer);
+    virtual ~RTPC();
 
     void GetContainer(const uint32_t key);
     void GetVariant(const uint32_t key);
 };
-#endif
 }; // namespace ava::RuntimePropertyContainer

@@ -78,18 +78,18 @@ enum EAmfFormat {
 
 #pragma pack(push, 8)
 struct SAmfMaterial {
-    uint32_t                                      m_Name;
-    uint32_t                                      m_RenderBlockId;
-    ava::AvalancheDataFormat::SAdfDeferredPtr     m_Attributes;
-    ava::AvalancheDataFormat::SAdfArray<uint32_t> m_Textures;
+    uint32_t            m_Name;
+    uint32_t            m_RenderBlockId;
+    SAdfDeferredPtr     m_Attributes;
+    SAdfArray<uint32_t> m_Textures;
 };
 
 struct SAmfModel {
-    uint32_t                                          m_Mesh;
-    ava::AvalancheDataFormat::SAdfArray<uint8_t>      m_LodSlots;
-    uint32_t                                          m_MemoryTag;
-    float                                             m_LodFactor;
-    ava::AvalancheDataFormat::SAdfArray<SAmfMaterial> m_Materials;
+    uint32_t                m_Mesh;
+    SAdfArray<uint8_t>      m_LodSlots;
+    uint32_t                m_MemoryTag;
+    float                   m_LodFactor;
+    SAdfArray<SAmfMaterial> m_Materials;
 };
 #pragma pack(pop)
 
@@ -119,32 +119,32 @@ struct SAmfStreamAttribute {
 };
 
 struct SAmfMesh {
-    uint32_t                                                 m_MeshTypeId;
-    uint32_t                                                 m_IndexCount;
-    uint32_t                                                 m_VertexCount;
-    int8_t                                                   m_IndexBufferIndex;
-    int8_t                                                   m_IndexBufferStride;
-    uint32_t                                                 m_IndexBufferOffset;
-    ava::AvalancheDataFormat::SAdfArray<int8_t>              m_VertexBufferIndices;
-    ava::AvalancheDataFormat::SAdfArray<int8_t>              m_VertexStreamStrides;
-    ava::AvalancheDataFormat::SAdfArray<int32_t>             m_VertexStreamOffsets;
-    float                                                    m_TextureDensities[3];
-    ava::AvalancheDataFormat::SAdfDeferredPtr                m_MeshProperties;
-    ava::AvalancheDataFormat::SAdfArray<int16_t>             m_BoneIndexLookup;
-    ava::AvalancheDataFormat::SAdfArray<SAmfSubMesh>         m_SubMeshes;
-    ava::AvalancheDataFormat::SAdfArray<SAmfStreamAttribute> m_StreamAttributes;
+    uint32_t                       m_MeshTypeId;
+    uint32_t                       m_IndexCount;
+    uint32_t                       m_VertexCount;
+    int8_t                         m_IndexBufferIndex;
+    int8_t                         m_IndexBufferStride;
+    uint32_t                       m_IndexBufferOffset;
+    SAdfArray<int8_t>              m_VertexBufferIndices;
+    SAdfArray<int8_t>              m_VertexStreamStrides;
+    SAdfArray<int32_t>             m_VertexStreamOffsets;
+    float                          m_TextureDensities[3];
+    SAdfDeferredPtr                m_MeshProperties;
+    SAdfArray<int16_t>             m_BoneIndexLookup;
+    SAdfArray<SAmfSubMesh>         m_SubMeshes;
+    SAdfArray<SAmfStreamAttribute> m_StreamAttributes;
 };
 
 struct SAmfLodGroup {
-    uint32_t                                      m_LODIndex;
-    ava::AvalancheDataFormat::SAdfArray<SAmfMesh> m_Meshes;
+    uint32_t            m_LODIndex;
+    SAdfArray<SAmfMesh> m_Meshes;
 };
 
 struct SAmfMeshHeader {
-    SAmfBoundingBox                                   m_BoundingBox;
-    uint32_t                                          m_MemoryTag;
-    ava::AvalancheDataFormat::SAdfArray<SAmfLodGroup> m_LodGroups;
-    uint32_t                                          m_HighLodPath;
+    SAmfBoundingBox         m_BoundingBox;
+    uint32_t                m_MemoryTag;
+    SAdfArray<SAmfLodGroup> m_LodGroups;
+    uint32_t                m_HighLodPath;
 };
 #pragma pack(pop)
 
@@ -153,23 +153,23 @@ static_assert(sizeof(SAmfMeshHeader) == 0x38, "SAmfMeshHeader alignment is wrong
 
 #pragma pack(push, 8)
 struct SAmfBuffer {
-    ava::AvalancheDataFormat::SAdfArray<int8_t> m_Data;
-    int8_t                                      m_CreateSRV : 1;
+    SAdfArray<int8_t> m_Data;
+    int8_t            m_CreateSRV : 1;
 };
 
 struct SAmfMeshBuffers {
-    uint32_t                                        m_MemoryTag;
-    ava::AvalancheDataFormat::SAdfArray<SAmfBuffer> m_IndexBuffers;
-    ava::AvalancheDataFormat::SAdfArray<SAmfBuffer> m_VertexBuffers;
+    uint32_t              m_MemoryTag;
+    SAdfArray<SAmfBuffer> m_IndexBuffers;
+    SAdfArray<SAmfBuffer> m_VertexBuffers;
 };
 #pragma pack(pop)
 
 static_assert(sizeof(SAmfBuffer) == 0x18, "SAmfBuffer alignment is wrong!");
 static_assert(sizeof(SAmfMeshBuffers) == 0x28, "SAmfMeshBuffers alignment is wrong!");
 
-Result ParseModelc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::ADF** out_adf, SAmfModel** out_model);
-Result ParseMeshc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::ADF** out_adf,
+Result ParseModelc(const std::vector<uint8_t>& buffer, AvalancheDataFormat::ADF** out_adf, SAmfModel** out_model);
+Result ParseMeshc(const std::vector<uint8_t>& buffer, AvalancheDataFormat::ADF** out_adf,
                   SAmfMeshHeader** out_mesh_header, SAmfMeshBuffers** out_mesh_buffer);
-Result ParseHrmeshc(const std::vector<uint8_t>& buffer, ava::AvalancheDataFormat::ADF** out_adf,
+Result ParseHrmeshc(const std::vector<uint8_t>& buffer, AvalancheDataFormat::ADF** out_adf,
                     SAmfMeshBuffers** out_mesh_buffer);
 }; // namespace ava::AvalancheModelFormat

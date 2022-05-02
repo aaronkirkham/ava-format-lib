@@ -20,3 +20,5 @@
 #include "avalanche_data_format.h"
 #include "avalanche_texture.h"
 #include "runtime_property_container.h"
+#include "shader_bundle.h"
+#include "string_lookup.h"

@@ -228,9 +228,13 @@ Result ReadEntry(const std::vector<uint8_t>& buffer, const ArchiveEntry& entry, 
         return E_INVALID_ARGUMENT;
     }
 
-    // @TODO: Fix reading entries which are patched (offset == 0).
+    // entry does not exist in this archive (patched)
+    if (entry.m_Offset == 0 || entry.m_Offset == -1) {
+        return E_SARC_PATCHED_ENTRY;
+    }
 
-    assert(entry.m_Offset != 0 && entry.m_Offset != -1);
+    // @TODO: Fix reading entries which are patched (offset == 0).
+    // assert(entry.m_Offset != 0 && entry.m_Offset != -1);
     assert((entry.m_Offset + entry.m_Size) <= buffer.size());
 
     const auto start = buffer.begin() + entry.m_Offset;
@@ -254,7 +258,11 @@ Result ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEn
     if (it != entries.end()) {
         const ArchiveEntry& entry = (*it);
 
-        assert(entry.m_Offset != 0 && entry.m_Offset != -1);
+        // entry does not exist in this archive (patched)
+        if (entry.m_Offset == 0 || entry.m_Offset == -1) {
+            return E_SARC_PATCHED_ENTRY;
+        }
+
         assert((entry.m_Offset + entry.m_Size) <= buffer.size());
 
         const auto start = buffer.begin() + entry.m_Offset;

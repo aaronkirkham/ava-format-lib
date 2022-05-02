@@ -2,7 +2,7 @@
 #include "catch.hpp"
 
 #include <AvaFormatLib.h>
-#include <archives/legacy/archive_table.h>
+#include <legacy/archive_table.h>
 #include <error.h>
 
 #include <filesystem>
@@ -491,7 +491,7 @@ TEST_CASE("Avalanche Model Format", "[AvaFormatLib][AMF]")
 
         REQUIRE(amf_model->m_Mesh == 0xc316a3df);
 
-        std::free(adf);
+        delete adf;
         std::free(amf_model);
     }
 
@@ -510,7 +510,7 @@ TEST_CASE("Avalanche Model Format", "[AvaFormatLib][AMF]")
         REQUIRE(mesh_header->m_HighLodPath == 0x778851d8);
         REQUIRE(mesh_buffer->m_VertexBuffers.m_Count == 1);
 
-        std::free(adf);
+        delete adf;
         std::free(mesh_header);
         std::free(mesh_buffer);
     }

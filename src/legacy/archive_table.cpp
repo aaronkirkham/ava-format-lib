@@ -1,4 +1,4 @@
-#include <archives/legacy/archive_table.h>
+#include <legacy/archive_table.h>
 
 #include <util/byte_array_buffer.h>
 #include <util/byte_vector_writer.h>
