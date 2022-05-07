@@ -4,6 +4,8 @@
 #define AVAFORMATLIB_VERSION_MINOR 0
 #define AVAFORMATLIB_VERSION_REVISION 0
 
+#include "types.h"
+
 #include "util/hashlittle.h"
 #include "util/math.h"
 #include "util/murmur3.h"
