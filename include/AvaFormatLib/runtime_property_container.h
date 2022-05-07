@@ -120,6 +120,6 @@ struct Container {
  *
  * @param buffer Input buffer containing a raw RTPC file buffer
  * @param out_containers Pointer to a Container of the root node
-//  */
+ */
 Result Parse(const std::vector<uint8_t>& buffer, Container* out_root_container);
 }; // namespace ava::RuntimePropertyContainer
