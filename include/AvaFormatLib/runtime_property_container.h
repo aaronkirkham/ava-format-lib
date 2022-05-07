@@ -109,8 +109,8 @@ struct Container {
     {
     }
 
-    Container& GetContainer(uint32_t namehash, bool look_in_child_containers = true);
-    Variant&   GetVariant(uint32_t namehash, bool look_in_child_containers = true);
+    const Container& GetContainer(uint32_t namehash, bool look_in_child_containers = true);
+    Variant&         GetVariant(uint32_t namehash, bool look_in_child_containers = true);
 
     const bool valid() const { return m_NameHash != 0xFFFFFFFF; }
 };

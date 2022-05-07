@@ -162,12 +162,18 @@ Result Parse(const std::vector<uint8_t>& buffer, Container* out_root_container)
     return E_OK;
 }
 
-Container& Container::GetContainer(uint32_t namehash, bool look_in_child_containers)
+const Container& Container::GetContainer(uint32_t namehash, bool look_in_child_containers)
 {
-    auto iter = std::find_if(m_Containers.begin(), m_Containers.end(),
-                             [namehash](const Container& container) { return container.m_NameHash == namehash; });
-    if (iter != m_Containers.end()) {
-        return (*iter);
+    for (auto& container : m_Containers) {
+        if (container.m_NameHash == namehash) {
+            return container;
+        }
+
+        if (look_in_child_containers) {
+            if (auto& child = container.GetContainer(namehash); child.valid()) {
+                return child;
+            }
+        }
     }
 
     return invalid_container;
@@ -175,15 +181,18 @@ Container& Container::GetContainer(uint32_t namehash, bool look_in_child_contain
 
 Variant& Container::GetVariant(uint32_t namehash, bool look_in_child_containers)
 {
-    auto iter = std::find_if(m_Variants.begin(), m_Variants.end(),
-                             [namehash](const Variant& variant) { return variant.m_NameHash == namehash; });
-
-    if (iter != m_Variants.end()) {
-        return (*iter);
+    for (auto& variant : m_Variants) {
+        if (variant.m_NameHash == namehash) {
+            return variant;
+        }
     }
 
     if (look_in_child_containers) {
-        // TODO
+        for (auto& container : m_Containers) {
+            if (auto& child = container.GetVariant(namehash); child.valid()) {
+                return child;
+            }
+        }
     }
 
     return invalid_variant;

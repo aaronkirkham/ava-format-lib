@@ -31,7 +31,7 @@ struct SObjectID {
     SObjectID() = default;
     SObjectID(const uint64_t object_id)
     {
-        m_UserData      = object_id;
+        m_UserData      = (uint16_t)object_id;
         m_Hash.m_First  = (object_id >> 0x30) & 0xFFFF;
         m_Hash.m_Second = (object_id >> 0x20) & 0xFFFF;
         m_Hash.m_Third  = (object_id >> 0x10) & 0xFFFF;

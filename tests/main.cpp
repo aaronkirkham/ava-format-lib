@@ -2,8 +2,8 @@
 #include "catch.hpp"
 
 #include <AvaFormatLib.h>
-#include <legacy/archive_table.h>
 #include <error.h>
+#include <legacy/archive_table.h>
 
 #include <filesystem>
 #include <fstream>
@@ -342,7 +342,6 @@ TEST_CASE("Resource Bundle", "[AvaFormatLib][ResourceBundle]")
     }
 }
 
-#if 0
 TEST_CASE("Runtime Property Container", "[AvaFormatLib][RTPC]")
 {
     using namespace ava::RuntimePropertyContainer;
@@ -350,22 +349,54 @@ TEST_CASE("Runtime Property Container", "[AvaFormatLib][RTPC]")
     FileBuffer buffer;
     ReadTestFile("random_encounter_bombs_away.epe", &buffer);
 
-    // SECTION("handles invalid input arguments")
-    // {
-    //     REQUIRE_THROWS_AS(
-    //         []() {
-    //             // invalid input buffer
-    //             RuntimeContainer rtpc({});
-    //         }(),
-    //         std::invalid_argument);
-    // }
-
-    SECTION("123")
+    SECTION("handles invalid input arguments")
     {
-        RuntimeContainer rtpc(buffer);
+        Container root_container{};
+
+        REQUIRE(Parse({}, &root_container) == ava::Result::E_INVALID_ARGUMENT);
+        REQUIRE(Parse(buffer, nullptr) == ava::Result::E_INVALID_ARGUMENT);
+    }
+
+    SECTION("file was parsed and root_container is valid")
+    {
+        Container root_container{};
+        REQUIRE(AVA_FL_SUCCEEDED(Parse(buffer, &root_container)));
+
+        REQUIRE(root_container.m_NameHash == ava::hashlittle("root"));
+        REQUIRE(root_container.m_Containers.size() == 22);
+        REQUIRE(root_container.m_Variants.empty());
+    }
+
+    SECTION("doesn't read variants from nested child containers")
+    {
+        Container root_container{};
+        REQUIRE(AVA_FL_SUCCEEDED(Parse(buffer, &root_container)));
+
+        auto& variant = root_container.GetVariant(ava::hashlittle("name"), false);
+        REQUIRE(!variant.valid());
+    }
+
+    SECTION("can find containers from their namehash")
+    {
+        Container root_container{};
+        REQUIRE(AVA_FL_SUCCEEDED(Parse(buffer, &root_container)));
+
+        auto& container = root_container.GetContainer(ava::hashlittle("11"));
+        REQUIRE(container.valid());
+        REQUIRE(container.m_Variants.size() == 42);
+    }
+
+    SECTION("can read variants from nested child containers")
+    {
+        Container root_container{};
+        REQUIRE(AVA_FL_SUCCEEDED(Parse(buffer, &root_container)));
+
+        auto& variant = root_container.GetVariant(ava::hashlittle("name"));
+        REQUIRE(variant.valid());
+        REQUIRE(variant.m_Type == T_VARIANT_STRING);
+        REQUIRE(variant.as<std::string>() == "GraphScript_EventRelay_TargetKilledWin");
     }
 }
-#endif
 
 TEST_CASE("Avalanche Data Format", "[AvaFormatLib][ADF]")
 {
@@ -436,28 +467,29 @@ TEST_CASE("Avalanche Data Format", "[AvaFormatLib][ADF]")
     }
 }
 
-#if 0
 TEST_CASE("Render Block Model", "[AvaFormatLib][RBMDL]")
 {
     using namespace ava::RenderBlockModel;
 
     FileBuffer buffer;
-    ReadTestFile("model.rbm", &buffer);
+    ReadTestFile("jc3_logo_main_lod1.rbm", &buffer);
 
     SECTION("handles invalid input arguments")
     {
-        static auto hash_handler = [](uint32_t hash, const std::vector<uint8_t>& buffer) {};
-        REQUIRE(Parse({}, hash_handler) == ava::Result::E_INVALID_ARGUMENT);
+        std::vector<RenderBlockData> render_blocks;
+        REQUIRE(Parse({}, &render_blocks) == ava::Result::E_INVALID_ARGUMENT);
         REQUIRE(Parse(buffer, nullptr) == ava::Result::E_INVALID_ARGUMENT);
     }
 
     SECTION("file was parsed")
     {
-        static auto hash_handler = [](uint32_t hash, const std::vector<uint8_t>& buffer) { REQUIRE_FALSE(true); };
-        REQUIRE(AVA_FL_SUCCEEDED(Parse(buffer, hash_handler)));
+        std::vector<RenderBlockData> render_blocks;
+        REQUIRE(AVA_FL_SUCCEEDED(Parse(buffer, &render_blocks)));
+        REQUIRE(!render_blocks.empty());
+        REQUIRE(render_blocks[0].first == RB_GENERALMKIII);
+        REQUIRE(!render_blocks[0].second.empty());
     }
 }
-#endif
 
 TEST_CASE("Avalanche Model Format", "[AvaFormatLib][AMF]")
 {
