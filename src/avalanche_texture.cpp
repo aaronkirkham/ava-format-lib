@@ -43,9 +43,11 @@ Result ReadBestEntry(const std::vector<uint8_t>& buffer, TextureEntry* out_entry
     entry.m_Source = avtx_stream.m_Source;
     *out_entry     = entry;
 
+    out_buffer->resize(avtx_stream.m_Size);
+
     // copy the pixel data
-    const auto start = (avtx_stream.m_Source ? source_buffer.begin() : buffer.begin()) + avtx_stream.m_Offset;
-    std::copy(start, start + avtx_stream.m_Size, std::back_inserter(*out_buffer));
+    const auto start = (avtx_stream.m_Source ? source_buffer.data() : buffer.data()) + avtx_stream.m_Offset;
+    std::memcpy(out_buffer->data(), start, avtx_stream.m_Size);
     return E_OK;
 }
 
@@ -90,9 +92,11 @@ Result ReadEntry(const std::vector<uint8_t>& buffer, const uint8_t stream_index,
     entry.m_Source = avtx_stream.m_Source;
     *out_entry     = entry;
 
+    out_buffer->resize(avtx_stream.m_Size);
+
     // copy the pixel data
-    const auto start = (avtx_stream.m_Source ? source_buffer.begin() : buffer.begin()) + avtx_stream.m_Offset;
-    std::copy(start, start + avtx_stream.m_Size, std::back_inserter(*out_buffer));
+    const auto start = (avtx_stream.m_Source ? source_buffer.data() : buffer.data()) + avtx_stream.m_Offset;
+    std::memcpy(out_buffer->data(), start, avtx_stream.m_Size);
     return E_OK;
 }
 
