@@ -1,13 +1,18 @@
 #include <runtime_property_container.h>
 
+#include <types.h>
 #include <util/byte_array_buffer.h>
 #include <util/hashlittle.h>
 #include <util/math.h>
 
 #include <algorithm>
+#include <array>
 
 namespace ava::RuntimePropertyContainer
 {
+static Container invalid_container = Container::invalid();
+static Variant   invalid_variant   = Variant::invalid();
+
 Container read_container(std::istream& stream)
 {
     // read the container
@@ -44,18 +49,30 @@ Container read_container(std::istream& stream)
             }
 
             case T_VARIANT_VEC2: {
+                std::array<float, 2> value;
+                stream.read((char*)&value, sizeof(value));
+                variant_wrap.m_Value = std::move(value);
                 break;
             }
 
             case T_VARIANT_VEC3: {
+                std::array<float, 3> value;
+                stream.read((char*)&value, sizeof(value));
+                variant_wrap.m_Value = std::move(value);
                 break;
             }
 
             case T_VARIANT_VEC4: {
+                std::array<float, 4> value;
+                stream.read((char*)&value, sizeof(value));
+                variant_wrap.m_Value = std::move(value);
                 break;
             }
 
             case T_VARIANT_MAT4x4: {
+                std::array<float, 16> value;
+                stream.read((char*)&value, sizeof(value));
+                variant_wrap.m_Value = std::move(value);
                 break;
             }
 
@@ -90,12 +107,19 @@ Container read_container(std::istream& stream)
             }
 
             case T_VARIANT_OBJECTID: {
-                // TODO
+                SObjectID value;
+                stream.read((char*)&value, sizeof(SObjectID));
+                variant_wrap.m_Value = value;
                 break;
             }
 
             case T_VARIANT_VEC_EVENTS: {
-                // TODO
+                int32_t count;
+                stream.read((char*)&count, sizeof(int32_t));
+
+                std::vector<SObjectID> value(count);
+                stream.read((char*)value.data(), (count * sizeof(SObjectID)));
+                variant_wrap.m_Value = std::move(value);
                 break;
             }
         }
@@ -146,7 +170,7 @@ Container& Container::GetContainer(uint32_t namehash, bool look_in_child_contain
         return (*iter);
     }
 
-    return Container::invalid();
+    return invalid_container;
 }
 
 Variant& Container::GetVariant(uint32_t namehash, bool look_in_child_containers)
@@ -162,6 +186,6 @@ Variant& Container::GetVariant(uint32_t namehash, bool look_in_child_containers)
         // TODO
     }
 
-    return Variant::invalid();
+    return invalid_variant;
 }
 }; // namespace ava::RuntimePropertyContainer
