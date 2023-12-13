@@ -3,10 +3,12 @@
 #include <assert.h>
 #include <vector>
 
-class byte_vector_writer
+namespace ava::utils
+{
+class ByteVectorStream
 {
   public:
-    byte_vector_writer(std::vector<uint8_t>* buffer)
+    ByteVectorStream(std::vector<uint8_t>* buffer)
         : buffer_(buffer)
         , offset_(0)
     {
@@ -36,15 +38,25 @@ class byte_vector_writer
         offset_ += (size * count);
     }
 
-    void setp(const size_t pos)
+    void write(const std::vector<uint8_t>& buffer) { write(buffer.data(), buffer.size()); }
+
+    template <typename T> void write(const T& value) { write(&value, sizeof(T)); }
+
+    // write non-null terminated string - we must write the length first, even if the string is empty
+    void writeString(const char* string, const uint32_t length)
     {
-        offset_ = pos;
+        write(length);
+
+        if (string) {
+            write(string, length);
+        }
     }
 
-    const size_t tellp() const
-    {
-        return offset_;
-    }
+    void writeNullTerminatedString(const char* string, const uint32_t length) { write(string, length); }
+
+    void setp(const size_t pos) { offset_ = pos; }
+
+    const size_t tellp() const { return offset_; }
 
   private:
     std::vector<uint8_t>* buffer_;
@@ -58,3 +70,4 @@ class byte_vector_writer
         }
     }
 };
+} // namespace ava::utils

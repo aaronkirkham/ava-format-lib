@@ -61,6 +61,19 @@ struct SObjectID {
 #pragma pack(pop)
 
 using SEventID = SObjectID;
+
+#pragma pack(push, 1)
+struct SPackedAttribute {
+    int32_t m_Format;
+    float   m_Scale;
+    float   m_UV0Extent[2];
+    float   m_UV1Extent[2];
+    float   m_ColorExtent;
+    uint8_t m_Color[4];
+};
+#pragma pack(pop)
+
+static_assert(sizeof(SPackedAttribute) == 0x20, "SPackedAttribute alignment is wrong!");
 } // namespace ava
 
 #endif // JCMR_AVAFORMATLIB_TYPES_H_HEADER_GUARD

@@ -1,7 +1,7 @@
 #include <legacy/archive_table.h>
 
 #include <util/byte_array_buffer.h>
-#include <util/byte_vector_writer.h>
+#include <util/byte_vector_stream.h>
 #include <util/hashlittle.h>
 
 #include <algorithm>
@@ -80,12 +80,12 @@ Result WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* ou
         return E_INVALID_ARGUMENT;
     }
 
-    byte_vector_writer buf(out_tab_buffer);
+    utils::ByteVectorStream buf(out_tab_buffer);
 
     if (out_tab_buffer->empty()) {
         // write tab header
         TabHeader header;
-        buf.write((char*)&header, sizeof(TabHeader));
+        buf.write(header);
     }
 
     TabEntry entry{};
@@ -94,7 +94,7 @@ Result WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* ou
     entry.m_Size     = static_cast<uint32_t>(file_buffer.size());
 
     // write the tab entry
-    buf.write((char*)&entry, sizeof(TabEntry));
+    buf.write(entry);
 
     // write the file buffer
     std::copy(file_buffer.begin(), file_buffer.end(), std::back_inserter(*out_arc_buffer));

@@ -1,7 +1,7 @@
 #include <archives/resource_bundle.h>
 
 #include <util/byte_array_buffer.h>
-#include <util/byte_vector_writer.h>
+#include <util/byte_vector_stream.h>
 #include <util/hashlittle.h>
 
 namespace ava::ResourceBundle
@@ -43,14 +43,14 @@ Result WriteEntry(std::vector<uint8_t>* out_buffer, const std::filesystem::path&
         return E_INVALID_ARGUMENT;
     }
 
-    byte_vector_writer buf(out_buffer);
+    utils::ByteVectorStream buf(out_buffer);
 
     ResourceEntry entry{};
     entry.m_NameHash      = ava::hashlittle(filename.string().c_str());
     entry.m_ExtensionHash = ava::hashlittle(filename.extension().string().c_str());
     entry.m_Size          = static_cast<uint32_t>(file_buffer.size());
 
-    buf.write((char*)&entry, sizeof(ResourceEntry));
+    buf.write(entry);
     std::copy(file_buffer.begin(), file_buffer.end(), std::back_inserter(*out_buffer));
     return E_OK;
 }

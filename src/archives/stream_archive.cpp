@@ -1,7 +1,7 @@
 #include <archives/stream_archive.h>
 
 #include <util/byte_array_buffer.h>
-#include <util/byte_vector_writer.h>
+#include <util/byte_vector_stream.h>
 #include <util/hashlittle.h>
 #include <util/math.h>
 
@@ -216,8 +216,8 @@ Result InitBuffer(std::vector<uint8_t>* buffer, const uint32_t version)
     SarcHeader header;
     header.m_Version = version;
 
-    byte_vector_writer buf(buffer);
-    buf.write((char*)&header, sizeof(SarcHeader));
+    utils::ByteVectorStream buf(buffer);
+    buf.write(header);
     return E_OK;
 }
 
@@ -251,7 +251,7 @@ Result ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEn
     const uint32_t filename_hash = ava::hashlittle(filename.c_str());
     const auto     it = std::find_if(entries.begin(), entries.end(), [filename_hash](const ArchiveEntry& entry) {
         return entry.m_NameHash == filename_hash;
-        });
+    });
 
     if (it == entries.end()) {
         return E_SARC_UNKNOWN_ENTRY;
@@ -290,15 +290,15 @@ Result WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entri
         return E_SARC_INVALID_MAGIC;
     }
 
-    std::vector<uint8_t> temp_buffer;
-    byte_vector_writer   tbuf(&temp_buffer);
+    std::vector<uint8_t>    temp_buffer;
+    utils::ByteVectorStream tbuf(&temp_buffer);
 
     const uint32_t filename_hash = ava::hashlittle(filename.c_str());
 
     ArchiveEntry* entry = nullptr;
     const auto    it    = std::find_if(entries->begin(), entries->end(), [filename_hash](const ArchiveEntry& item) {
         return item.m_NameHash == filename_hash;
-          });
+    });
 
     // file currently does not exist in the archive, add a new entry
     if (it == entries->end()) {
@@ -345,7 +345,7 @@ Result WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entri
 
             // allocate enough space for everything
             temp_buffer.resize(sizeof(SarcHeader) + header.m_Size + data_size);
-            tbuf.write((char*)&header, sizeof(SarcHeader));
+            tbuf.write(header);
 
             // update all entries
             uint32_t current_data_offset = (sizeof(SarcHeader) + header.m_Size);
@@ -355,11 +355,11 @@ Result WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entri
                 const bool     exists_in_sarc = (entry.m_Offset != 0 && entry.m_Offset != -1);
                 const uint32_t data_offset    = exists_in_sarc ? current_data_offset : entry.m_Offset;
 
-                tbuf.write((char*)&length, sizeof(uint32_t));
+                tbuf.write(length);
                 tbuf.write((char*)entry.m_Filename.c_str(), entry.m_Filename.length());
                 tbuf.write((char*)&SARC_ENTRY_PADDING_BYTE, sizeof(uint8_t), padding);
-                tbuf.write((char*)&data_offset, sizeof(uint32_t));
-                tbuf.write((char*)&entry.m_Size, sizeof(uint32_t));
+                tbuf.write(data_offset);
+                tbuf.write(entry.m_Size);
 
                 // only update offsets of non-patched files
                 if (exists_in_sarc) {
@@ -389,7 +389,7 @@ Result WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entri
                     return accumulator + (uint32_t)entry.m_Filename.length() + 1;
                 });
 
-            tbuf.write((char*)&strings_length, sizeof(uint32_t));
+            tbuf.write(strings_length);
 
             // write strings
             for (const auto& entry : *entries) {
@@ -419,15 +419,15 @@ Result WriteTOC(std::vector<uint8_t>* buffer, const std::vector<ArchiveEntry>& e
         return E_INVALID_ARGUMENT;
     }
 
-    byte_vector_writer buf(buffer);
+    utils::ByteVectorStream buf(buffer);
 
     for (const auto& entry : entries) {
         const uint32_t filename_len = static_cast<uint32_t>(entry.m_Filename.length());
 
-        buf.write((char*)&filename_len, sizeof(uint32_t));
+        buf.write(filename_len);
         buf.write(entry.m_Filename.c_str(), filename_len);
-        buf.write((char*)&entry.m_Offset, sizeof(uint32_t));
-        buf.write((char*)&entry.m_Size, sizeof(uint32_t));
+        buf.write(entry.m_Offset);
+        buf.write(entry.m_Size);
     }
 
     return E_OK;

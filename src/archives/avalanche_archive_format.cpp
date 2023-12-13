@@ -1,7 +1,7 @@
 #include <archives/avalanche_archive_format.h>
 
 #include <util/byte_array_buffer.h>
-#include <util/byte_vector_writer.h>
+#include <util/byte_vector_stream.h>
 #include <util/hashlittle.h>
 #include <util/math.h>
 #include <util/zlib.h>
@@ -29,8 +29,8 @@ Result Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_bu
     header.m_RequiredUnpackBufferSize = (has_multiple_chunks ? AAF_MAX_CHUNK_DATA_SIZE : buffer_size);
     header.m_NumChunks                = num_chunks;
 
-    byte_vector_writer buf(out_buffer);
-    buf.write(&header, sizeof(AafHeader));
+    utils::ByteVectorStream buf(out_buffer);
+    buf.write(header);
 
     // create the chunks
     uint32_t last_chunk_offset = 0;
@@ -78,7 +78,7 @@ Result Compress(const std::vector<uint8_t>& buffer, std::vector<uint8_t>* out_bu
         chunk.m_ChunkSize = (sizeof(AafChunk) + chunk.m_CompressedSize + padding);
 
         // write chunk and compressed data
-        buf.write((char*)&chunk, sizeof(AafChunk));
+        buf.write(chunk);
         buf.write(compressed_block.data(), chunk.m_CompressedSize);
 
         // write block padding

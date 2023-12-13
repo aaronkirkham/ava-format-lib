@@ -4,6 +4,7 @@
 #include <util/math.h>
 
 #include <algorithm>
+#include <memory>
 
 namespace ava::AvalancheDataFormat
 {
@@ -38,8 +39,8 @@ ADF::ADF()
 }
 
 ADF::ADF(const std::vector<uint8_t>& buffer)
-    : m_Header((AdfHeader*)buffer.data())
-    , m_Buffer(buffer)
+    : m_Buffer(buffer)
+    , m_Header((AdfHeader*)m_Buffer.data())
 {
     if (buffer.empty()) {
         // throw std::invalid_argument("ADF input buffer can't be empty!");
@@ -222,6 +223,7 @@ void ADF::AddTypes(const std::vector<uint8_t>& buffer)
         auto type = (AdfType*)std::malloc(size);
         if (!type) {
             // throw std::runtime_error("ADF can't allocate enough space for type");
+            break;
         }
 
         std::memcpy(type, current, size);
@@ -240,6 +242,7 @@ void ADF::AddTypes(const std::vector<uint8_t>& buffer)
         }
 
         m_Types.push_back(type);
+        m_InternalTypes.push_back(type);
         types_data += size;
     }
 }

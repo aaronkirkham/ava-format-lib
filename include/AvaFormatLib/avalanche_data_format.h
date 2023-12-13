@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <map>
+#include <string>
 #include <vector>
 
 namespace ava
@@ -48,11 +49,14 @@ template <typename T> struct SAdfArray {
     T*       m_Data;
     uint32_t m_Count;
 
-    T* begin() const { return m_Data; }
-    T* end() const { return m_Data ? m_Data + m_Count : nullptr; }
+    const T* data() const { return m_Data[0]; }
+    T*       begin() const { return m_Data; }
+    T*       end() const { return m_Data ? m_Data + m_Count : nullptr; }
 
     const T& operator[](uint32_t index) const { return m_Data[index]; }
     T&       operator[](uint32_t index) { return m_Data[index]; }
+
+    const char* c_str() const { return (const char*)&m_Data[0]; }
 };
 
 struct SAdfDeferredPtr {
@@ -184,6 +188,7 @@ namespace AvalancheDataFormat
         std::vector<uint8_t>            m_Buffer;
         AdfHeader*                      m_Header = nullptr;
         std::vector<AdfType*>           m_Types;
+        std::vector<AdfType*>           m_InternalTypes;
         std::vector<std::string>        m_Strings;
         std::map<uint32_t, std::string> m_StringHashes;
 
@@ -293,8 +298,16 @@ namespace AvalancheDataFormat
         }
 
         const std::vector<uint8_t>* GetBuffer() { return &m_Buffer; }
+        const AdfHeader&            GetHeader() const { return *m_Header; }
+        const std::string&          GetString(const uint64_t index) { return m_Strings[index]; }
 
-        const std::string& GetString(const uint64_t index) { return m_Strings[index]; }
+        const std::vector<AdfType*>& GetTypes(bool only_internal = true) const
+        {
+            if (only_internal)
+                return m_InternalTypes;
+            else
+                return m_Types;
+        }
     };
 } // namespace AvalancheDataFormat
 } // namespace ava

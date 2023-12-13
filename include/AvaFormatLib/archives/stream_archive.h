@@ -3,6 +3,7 @@
 #include "../error.h"
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace ava::StreamArchive
@@ -53,7 +54,7 @@ Result ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* o
  * @param out_total_patched (Optional) Pointer to a uint32_t where a total number of patched entrys will be written
  */
 Result ParseTOC(const std::vector<uint8_t>& buffer, std::vector<ArchiveEntry>* entries, uint32_t* out_total_added,
-              uint32_t* out_total_patched);
+                uint32_t* out_total_patched);
 
 /**
  * Init an empty buffer with a SARC header
@@ -81,7 +82,7 @@ Result ReadEntry(const std::vector<uint8_t>& buffer, const ArchiveEntry& entry, 
  * @param out_buffer Pointer to char vector where the output entry buffer will be written
  */
 Result ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEntry>& entries,
-               const std::string& filename, std::vector<uint8_t>* out_buffer);
+                 const std::string& filename, std::vector<uint8_t>* out_buffer);
 
 /**
  * Write a file to a SARC buffer
@@ -92,7 +93,7 @@ Result ReadEntry(const std::vector<uint8_t>& buffer, const std::vector<ArchiveEn
  * @param file_buffer Input buffer containing the raw data for the file to write to the SARC buffer
  */
 Result WriteEntry(std::vector<uint8_t>* buffer, std::vector<ArchiveEntry>* entries, const std::string& filename,
-                const std::vector<uint8_t>& file_buffer);
+                  const std::vector<uint8_t>& file_buffer);
 
 /**
  * Write a TOC file

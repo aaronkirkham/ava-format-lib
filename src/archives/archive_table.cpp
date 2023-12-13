@@ -2,7 +2,7 @@
 #include <archives/oodle_helper.h>
 
 #include <util/byte_array_buffer.h>
-#include <util/byte_vector_writer.h>
+#include <util/byte_vector_stream.h>
 #include <util/hashlittle.h>
 
 #include <algorithm>
@@ -233,18 +233,18 @@ Result WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* ou
         return E_INVALID_ARGUMENT;
     }
 
-    byte_vector_writer buf(out_tab_buffer);
+    utils::ByteVectorStream buf(out_tab_buffer);
 
     if (out_tab_buffer->empty()) {
         // write tab header
         TabHeader header;
-        buf.write((char*)&header, sizeof(TabHeader));
+        buf.write(header);
 
         // write compressed blocks
         // @TODO: figure this out!
         uint32_t compressed_block_count = 0;
         // TabCompressedBlock compressed_block{0xFFFFFFFF, 0xFFFFFFFF};
-        buf.write((char*)&compressed_block_count, sizeof(uint32_t));
+        buf.write(compressed_block_count);
         // buf.write((char*)&compressed_block, sizeof(TabCompressedBlock), compressed_block_count);
     }
 
@@ -259,6 +259,7 @@ Result WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* ou
 
     switch (compression) {
         case E_COMPRESS_LIBRARY_NONE: {
+            // TODO : memcpy
             std::copy(file_buffer.begin(), file_buffer.end(), std::back_inserter(*out_arc_buffer));
             break;
         }
@@ -290,6 +291,7 @@ Result WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* ou
                 }
 
                 // write the compressed buffer to the arc buffer
+                // TODO : memcpy
                 std::copy(compressed_data.begin(), compressed_data.end(), std::back_inserter(*out_arc_buffer));
             } else {
 #ifdef _DEBUG
@@ -304,7 +306,7 @@ Result WriteEntry(std::vector<uint8_t>* out_tab_buffer, std::vector<uint8_t>* ou
     }
 
     // write the tab entry
-    buf.write((char*)&entry, sizeof(TabEntry));
+    buf.write(entry);
     return E_OK;
 }
 }; // namespace ava::ArchiveTable

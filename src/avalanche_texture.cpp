@@ -1,7 +1,7 @@
 #include <avalanche_texture.h>
 
 #include <util/byte_array_buffer.h>
-#include <util/byte_vector_writer.h>
+#include <util/byte_vector_stream.h>
 #include <util/hashlittle.h>
 
 namespace ava::AvalancheTexture
