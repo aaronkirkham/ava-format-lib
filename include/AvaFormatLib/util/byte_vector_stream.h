@@ -12,7 +12,6 @@ class ByteVectorStream
         : buffer_(buffer)
         , offset_(0)
     {
-        assert(buffer != nullptr);
         if (!buffer->empty()) {
             offset_ = buffer->size();
         }
@@ -20,21 +19,26 @@ class ByteVectorStream
 
     void write(const void* data, const size_t size)
     {
-        buffer_alloc(size);
+        if (size == 0) {
+            return;
+        }
+
+        ensure_size(size);
         std::memcpy(buffer_->data() + offset_, data, size);
         offset_ += size;
     }
 
     void write(const void* data, const size_t size, const size_t count)
     {
-        if (count == 0) {
+        if (size == 0 || count == 0) {
             return;
         }
 
-        buffer_alloc(size * count);
+        ensure_size(size * count);
         for (size_t i = 0; i < count; ++i) {
             std::memcpy(buffer_->data() + (offset_ + (i * size)), data, size);
         }
+
         offset_ += (size * count);
     }
 
@@ -54,19 +58,18 @@ class ByteVectorStream
 
     void writeNullTerminatedString(const char* string, const uint32_t length) { write(string, length); }
 
-    void setp(const size_t pos) { offset_ = pos; }
-
+    void         setp(const size_t pos) { offset_ = pos; }
     const size_t tellp() const { return offset_; }
 
   private:
     std::vector<uint8_t>* buffer_;
     size_t                offset_;
 
-    void buffer_alloc(const size_t size)
+    void ensure_size(const size_t size)
     {
         const size_t buffer_size = buffer_->size();
         if (buffer_size < (offset_ + size)) {
-            buffer_->resize(buffer_size + size);
+            buffer_->resize(offset_ + size);
         }
     }
 };

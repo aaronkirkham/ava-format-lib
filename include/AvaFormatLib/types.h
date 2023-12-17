@@ -45,10 +45,17 @@ struct SObjectID {
         m_Hash.m_Third  = (object_id >> 0x10) & 0xFFFF;
     }
 
-    uint64_t to_uint64()
+    uint64_t to_uint64() const
     {
         return m_UserData
                | ((m_Hash.m_Third | ((m_Hash.m_Second | ((uint64_t)m_Hash.m_First << 0x10)) << 0x10)) << 0x10);
+    }
+
+    // NOTE : same as to_uint64(), but endian flipped for saving back to binary files
+    uint64_t to_binary_uint64() const
+    {
+        return m_Hash.m_First
+               | ((m_Hash.m_Second | ((m_Hash.m_Third | ((uint64_t)m_UserData << 0x10)) << 0x10)) << 0x10);
     }
 
     std::string to_string()

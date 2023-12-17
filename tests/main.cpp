@@ -349,7 +349,7 @@ TEST_CASE("Runtime Property Container", "[AvaFormatLib][RTPC]")
     FileBuffer buffer;
     ReadTestFile("random_encounter_bombs_away.epe", &buffer);
 
-    SECTION("handles invalid input arguments")
+    SECTION("fails to parse with invalid input arguments")
     {
         Container root_container{};
 
@@ -395,6 +395,17 @@ TEST_CASE("Runtime Property Container", "[AvaFormatLib][RTPC]")
         REQUIRE(variant.valid());
         REQUIRE(variant.m_Type == T_VARIANT_STRING);
         REQUIRE(variant.as<std::string>() == "GraphScript_EventRelay_TargetKilledWin");
+    }
+
+    SECTION("can write parsed files back to their original state")
+    {
+        Container root_container{};
+        REQUIRE(AVA_FL_SUCCEEDED(Parse(buffer, &root_container)));
+
+        FileBuffer save_buffer;
+        REQUIRE(AVA_FL_SUCCEEDED(Write(root_container, &save_buffer)));
+
+        REQUIRE(FilesAreTheSame(buffer, save_buffer));
     }
 }
 

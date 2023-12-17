@@ -2,11 +2,13 @@
 
 #include <types.h>
 #include <util/byte_array_buffer.h>
+#include <util/byte_vector_stream.h>
 #include <util/hashlittle.h>
 #include <util/math.h>
 
 #include <algorithm>
 #include <array>
+#include <unordered_map>
 
 namespace ava::RuntimePropertyContainer
 {
@@ -159,6 +161,216 @@ Result Parse(const std::vector<uint8_t>& buffer, Container* out_root_container)
 
     // read the root container
     *out_root_container = read_container(stream);
+    return E_OK;
+}
+
+static RtpcContainer to_native_container(const Container& container, uint32_t data_offset = 0xFFffFFff)
+{
+    RtpcContainer native_container{};
+    native_container.m_Key           = container.m_NameHash;
+    native_container.m_DataOffset    = data_offset;
+    native_container.m_NumVariants   = (uint16_t)container.m_Variants.size();
+    native_container.m_NumContainers = (uint16_t)container.m_Containers.size();
+    return native_container;
+}
+
+void write_variants_data_buffer(std::vector<Variant>& variants, uint32_t data_offset,
+                                std::unordered_map<std::string, uint32_t>& strings, std::vector<uint8_t>* out_buffer,
+                                std::vector<RtpcContainerVariant>* out_native_variants)
+{
+    utils::ByteVectorStream stream(out_buffer);
+    out_native_variants->reserve(variants.size());
+
+    for (auto& variant : variants) {
+        auto       pos  = (data_offset + (uint32_t)stream.tellp());
+        const auto type = variant.m_Type;
+
+        // padding
+        if (type != T_VARIANT_INTEGER && type != T_VARIANT_FLOAT && type != T_VARIANT_STRING) {
+            uint32_t alignment = 4;
+
+            if (type == T_VARIANT_VEC4 || type == T_VARIANT_MAT4x4) {
+                alignment = 16;
+            }
+
+            // write padding bytes
+            const auto padding = math::align_distance(pos, alignment);
+            stream.write((char*)&RTPC_PADDING_BYTE, 1, padding);
+            pos += padding;
+        }
+
+        RtpcContainerVariant native_variant{};
+        native_variant.m_Key        = variant.m_NameHash;
+        native_variant.m_DataOffset = pos;
+        native_variant.m_Type       = type;
+
+        switch (type) {
+            case T_VARIANT_INTEGER: {
+                const auto value            = variant.as<int32_t>();
+                native_variant.m_DataOffset = (uint32_t)value;
+                break;
+            }
+
+            case T_VARIANT_FLOAT: {
+                const auto value            = variant.as<float>();
+                native_variant.m_DataOffset = *(uint32_t*)&value;
+                break;
+            }
+
+            case T_VARIANT_STRING: {
+                const auto& value = variant.as<std::string>();
+
+                auto it = strings.find(value);
+                if (it == strings.end()) {
+                    // cache the string location and write to the stream
+                    strings[value] = native_variant.m_DataOffset;
+
+                    stream.write(value.c_str(), value.length());
+                    stream.write('\0');
+                } else {
+                    // point the variant string data to the previously cached location
+                    native_variant.m_DataOffset = (*it).second;
+                }
+
+                break;
+            }
+
+            case T_VARIANT_VEC2: {
+                const auto& value = variant.as<std::array<float, 2>>();
+                stream.write(value);
+                break;
+            }
+
+            case T_VARIANT_VEC3: {
+                const auto& value = variant.as<std::array<float, 3>>();
+                stream.write(value);
+                break;
+            }
+
+            case T_VARIANT_VEC4: {
+                const auto& value = variant.as<std::array<float, 4>>();
+                stream.write(value);
+                break;
+            }
+
+            case T_VARIANT_MAT4x4: {
+                const auto& value = variant.as<std::array<float, 16>>();
+                stream.write(value);
+                break;
+            }
+
+            case T_VARIANT_VEC_INTS: {
+                const auto& value = variant.as<std::vector<int32_t>>();
+                stream.write((uint32_t)value.size());
+                stream.write(value.data(), (value.size() * sizeof(int32_t)));
+                break;
+            }
+
+            case T_VARIANT_VEC_FLOATS: {
+                const auto& value = variant.as<std::vector<float>>();
+                stream.write((uint32_t)value.size());
+                stream.write(value.data(), (value.size() * sizeof(float)));
+                break;
+            }
+
+            case T_VARIANT_VEC_BYTES: {
+                const auto& value = variant.as<std::vector<uint8_t>>();
+                stream.write((uint32_t)value.size());
+                stream.write(value.data(), (value.size() * sizeof(uint8_t)));
+                break;
+            }
+
+            case T_VARIANT_OBJECTID: {
+                const auto& value = variant.as<SObjectID>();
+                stream.write(value.to_binary_uint64());
+                break;
+            }
+
+            case T_VARIANT_VEC_EVENTS: {
+                const auto& value = variant.as<std::vector<SObjectID>>();
+                stream.write((uint32_t)value.size());
+                stream.write(value.data(), (value.size() * sizeof(SObjectID)));
+                break;
+            }
+        }
+
+        out_native_variants->emplace_back(std::move(native_variant));
+    }
+}
+
+uint32_t write_container(utils::ByteVectorStream& stream, const Container& container, uint32_t data_offset,
+                         std::unordered_map<std::string, uint32_t>& strings)
+{
+    auto variants   = container.m_Variants;
+    auto containers = container.m_Containers;
+
+    const auto native_variants_size   = (uint32_t)(variants.size() * sizeof(RtpcContainerVariant));
+    const auto native_containers_size = (uint32_t)(containers.size() * sizeof(RtpcContainer));
+
+    const auto variant_data_offset = math::align((uint32_t)data_offset + native_variants_size) + native_containers_size;
+
+    // write native variant data buffer
+    std::vector<uint8_t>              variants_data_buffer;
+    std::vector<RtpcContainerVariant> native_variants;
+    write_variants_data_buffer(variants, variant_data_offset, strings, &variants_data_buffer, &native_variants);
+    stream.setp(variant_data_offset);
+    stream.write(variants_data_buffer);
+
+    // write native variants
+    {
+        const auto native_variants_pos = math::align(data_offset);
+        stream.setp(native_variants_pos);
+        stream.write(native_variants.data(), native_variants_size);
+
+        // write padding bytes after the native variants
+        stream.write((char*)&RTPC_PADDING_BYTE, 1, math::align_distance(native_variants_pos + native_variants_size));
+    }
+
+    // write padding bytes at the end of this container and the start of the next
+    const auto next_offset_unaligned = (uint32_t)(variant_data_offset + variants_data_buffer.size());
+    {
+        stream.setp(next_offset_unaligned);
+        stream.write((char*)&RTPC_PADDING_BYTE, 1, math::align_distance(next_offset_unaligned));
+    }
+
+    const auto native_container_offset = math::align(data_offset + native_variants_size);
+    auto       next_data_offset        = math::align(next_offset_unaligned);
+
+    // write child containers
+    for (size_t i = 0; i < container.m_Containers.size(); ++i) {
+        const auto& child = container.m_Containers[i];
+
+        // write native container at it's offset
+        stream.setp(native_container_offset + (i * sizeof(RtpcContainer)));
+        stream.write(to_native_container(child, next_data_offset));
+
+        // write container data
+        next_data_offset = write_container(stream, child, next_data_offset, strings);
+    }
+
+    return next_data_offset;
+}
+
+Result Write(const Container& root_container, std::vector<uint8_t>* out_buffer)
+{
+    if (!out_buffer) {
+        return E_INVALID_ARGUMENT;
+    }
+
+    utils::ByteVectorStream stream(out_buffer);
+
+    // write header
+    RtpcHeader header;
+    stream.write(header);
+
+    const auto data_offset = (uint32_t)(sizeof(RtpcHeader) + sizeof(RtpcContainer));
+
+    // write the native container
+    auto native_container = to_native_container(root_container, data_offset);
+    stream.write(native_container);
+
+    std::unordered_map<std::string, uint32_t> _tmp_strings_cache;
+    write_container(stream, root_container, data_offset, _tmp_strings_cache);
     return E_OK;
 }
 
