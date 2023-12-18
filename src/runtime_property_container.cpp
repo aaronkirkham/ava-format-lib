@@ -298,8 +298,8 @@ void write_variants_data_buffer(std::vector<Variant>& variants, uint32_t data_of
     }
 }
 
-uint32_t write_container(utils::ByteVectorStream& stream, const Container& container, uint32_t data_offset,
-                         std::unordered_map<std::string, uint32_t>& strings)
+uint32_t write_container(utils::ByteVectorStream& stream, const Container& container, uint32_t version,
+                         uint32_t data_offset, std::unordered_map<std::string, uint32_t>& strings)
 {
     auto variants   = container.m_Variants;
     auto containers = container.m_Containers;
@@ -337,21 +337,21 @@ uint32_t write_container(utils::ByteVectorStream& stream, const Container& conta
     auto       next_data_offset        = math::align(next_offset_unaligned);
 
     // write child containers
-    for (size_t i = 0; i < container.m_Containers.size(); ++i) {
-        const auto& child = container.m_Containers[i];
+    for (size_t i = 0; i < containers.size(); ++i) {
+        const auto& child = containers[i];
 
         // write native container at it's offset
         stream.setp(native_container_offset + (i * sizeof(RtpcContainer)));
         stream.write(to_native_container(child, next_data_offset));
 
         // write container data
-        next_data_offset = write_container(stream, child, next_data_offset, strings);
+        next_data_offset = write_container(stream, child, version, next_data_offset, strings);
     }
 
     return next_data_offset;
 }
 
-Result Write(const Container& root_container, std::vector<uint8_t>* out_buffer)
+Result Write(const Container& root_container, uint32_t version, std::vector<uint8_t>* out_buffer)
 {
     if (!out_buffer) {
         return E_INVALID_ARGUMENT;
@@ -361,6 +361,7 @@ Result Write(const Container& root_container, std::vector<uint8_t>* out_buffer)
 
     // write header
     RtpcHeader header;
+    header.m_Version = version;
     stream.write(header);
 
     const auto data_offset = (uint32_t)(sizeof(RtpcHeader) + sizeof(RtpcContainer));
@@ -370,7 +371,7 @@ Result Write(const Container& root_container, std::vector<uint8_t>* out_buffer)
     stream.write(native_container);
 
     std::unordered_map<std::string, uint32_t> _tmp_strings_cache;
-    write_container(stream, root_container, data_offset, _tmp_strings_cache);
+    write_container(stream, root_container, version, data_offset, _tmp_strings_cache);
     return E_OK;
 }
 

@@ -397,13 +397,13 @@ TEST_CASE("Runtime Property Container", "[AvaFormatLib][RTPC]")
         REQUIRE(variant.as<std::string>() == "GraphScript_EventRelay_TargetKilledWin");
     }
 
-    SECTION("can write parsed files back to their original state")
+    SECTION("can write parsed files back to their original state (RTPC v1)")
     {
         Container root_container{};
         REQUIRE(AVA_FL_SUCCEEDED(Parse(buffer, &root_container)));
 
         FileBuffer save_buffer;
-        REQUIRE(AVA_FL_SUCCEEDED(Write(root_container, &save_buffer)));
+        REQUIRE(AVA_FL_SUCCEEDED(Write(root_container, 1, &save_buffer)));
 
         REQUIRE(FilesAreTheSame(buffer, save_buffer));
     }

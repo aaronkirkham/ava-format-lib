@@ -127,8 +127,9 @@ Result Parse(const std::vector<uint8_t>& buffer, Container* out_root_container);
  * Write an RTPC file
  *
  * @param container Input container for the RTPC file
+ * @param version Version number of the RTPC format to write
  * @param out_buffer Pointer to a byte buffer to write the RTPC file data to
  * @param flags Writer flags (EWriteFlags)
  */
-Result Write(const Container& root_container, std::vector<uint8_t>* out_buffer);
+Result Write(const Container& root_container, uint32_t version, std::vector<uint8_t>* out_buffer);
 }; // namespace ava::RuntimePropertyContainer
