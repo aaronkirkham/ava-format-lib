@@ -100,6 +100,66 @@ Result ReadEntry(const std::vector<uint8_t>& buffer, const uint8_t stream_index,
     return E_OK;
 }
 
+Result ReadAllEntries(const std::vector<uint8_t>& buffer, AvtxHeader* out_header,
+                      std::vector<TextureEntry>* out_entries, std::vector<std::vector<uint8_t>>* out_buffers,
+                      const std::vector<uint8_t>& source_buffer)
+{
+    if (buffer.empty() || !out_entries || !out_buffers) {
+        return E_INVALID_ARGUMENT;
+    }
+
+    byte_array_buffer buf(buffer);
+    std::istream      stream(&buf);
+
+    // read header
+    AvtxHeader header{};
+    stream.read((char*)&header, sizeof(AvtxHeader));
+    if (header.m_Magic != AVTX_MAGIC) {
+        return E_AVTX_INVALID_MAGIC;
+    }
+
+    if (header.m_Version != 1) {
+        return E_AVTX_UNKNOWN_VERSION;
+    }
+
+    *out_header = header;
+
+    // write all streams
+    for (uint32_t i = 0; i < AVTX_MAX_STREAMS; ++i) {
+        const AvtxStream& stream = header.m_Streams[i];
+        if (stream.m_Size == 0) {
+            continue;
+        }
+
+        // source buffer was required for this stream
+        if (stream.m_Source && source_buffer.empty()) {
+            // return E_AVTX_SOURCE_BUFFER_NEEDED;
+            continue;
+        }
+
+        const uint32_t rank = GetRank(header, i);
+
+        TextureEntry entry{};
+        entry.m_Width  = (header.m_Width >> rank);
+        entry.m_Height = (header.m_Height >> rank);
+        entry.m_Depth  = (header.m_Depth >> rank);
+        entry.m_Format = header.m_Format;
+        entry.m_Source = stream.m_Source;
+        out_entries->push_back(std::move(entry));
+
+        std::vector<uint8_t> out_buffer;
+        out_buffer.resize(stream.m_Size);
+
+        // copy the pixel data
+        const auto start = (stream.m_Source ? source_buffer.data() : buffer.data()) + stream.m_Offset;
+        std::memcpy(out_buffer.data(), start, stream.m_Size);
+
+        out_buffers->push_back(std::move(out_buffer));
+    }
+
+    return E_OK;
+}
+
 Result WriteEntry(std::vector<uint8_t>* buffer, const TextureEntry& entry, const std::vector<uint8_t>& texture_buffer,
                   std::vector<uint8_t>* source_buffer)
 {

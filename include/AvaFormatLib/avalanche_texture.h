@@ -88,6 +88,20 @@ Result ReadEntry(const std::vector<uint8_t>& buffer, const uint8_t stream_index,
                  std::vector<uint8_t>* out_buffer, const std::vector<uint8_t>& source_buffer = {});
 
 /**
+ * Read all entries from an AVTX buffer
+ *
+ * @param buffer Input buffer containing a raw AVTX file buffer
+ * @param out_header Pointer to an AvtxHeader struct to write the header data to
+ * @param out_entries Pointer to an array of TextureEntry structures
+ * @param out_buffers Pointer to an array of byte buffer array where the texture pixel data will be written
+ * @param source_buffer (Optional) Input source buffer containing raw texture data (only required if the
+ * AvtxStream.m_Source is set)
+ */
+Result ReadAllEntries(const std::vector<uint8_t>& buffer, AvtxHeader* out_header,
+                      std::vector<TextureEntry>* out_entries, std::vector<std::vector<uint8_t>>* out_buffers,
+                      const std::vector<uint8_t>& source_buffer = {});
+
+/**
  * Write a texture entry to the AVTX buffer
  *
  * @param buffer Pointer to a raw AVTX file buffer where the entry will be written
